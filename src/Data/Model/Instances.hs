@@ -10,9 +10,9 @@ instance Model a => Model (Maybe a)
 
 instance (Model a,Model b) => Model (Either a b)
 
-instance (Model a,Model b) => Model (a,b)
-instance (Model a,Model b,Model c) => Model (a,b,c)
-instance (Model a,Model b,Model c,Model d) => Model (a,b,c,d)
+-- instance (Model a,Model b) => Model (a,b)
+-- instance (Model a,Model b,Model c) => Model (a,b,c)
+-- instance (Model a,Model b,Model c,Model d) => Model (a,b,c,d)
 
 
 

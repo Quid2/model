@@ -7,10 +7,12 @@
 module Data.Model.Types(ADT(..),ConTree(..),conTreeTypeMap
                        ,Type(..),TypeN(..),typeN,typeA,TypeRef(..)
                        ,QualName(..),qualName
-                       ,HADT,HType,HTypeRef,HEnv) where
+                       ,HADT,HType,HTypeRef,HEnv
+                       ,module GHC.Generics,Proxy(..)) where
 
 import           Data.Bifunctor (second)
-import           Data.Word(Word8)
+import           Data.Proxy
+import           Data.Word      (Word8)
 import           GHC.Generics
 
 -- |Haskell ADT.
@@ -67,7 +69,7 @@ data ConTree ref =
   One Two  Three    |
                  Four Five
 
-  To get a list of constructor in declaration order, use: toList 
+  To get a list of constructor in declaration order, use: toList
   -}
   | ConTree (ConTree ref) (ConTree ref)
 

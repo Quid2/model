@@ -2,7 +2,7 @@ name:                model
 version:             0.1.0.0
 synopsis:            Derive a model of a data type using Generics
 description:         Please see README.md
-homepage:            http://github.com/tittoassini/model#readme
+homepage:            http://github.com/tittoassini/model
 license:             BSD3
 license-file:        LICENSE
 author:              Pasqualino `Titto` Assini
