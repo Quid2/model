@@ -4,6 +4,8 @@ module Data.Model.Instances where
 import           Data.Model.Class
 import           Data.Model.Types
 
+instance Model ()
+
 instance Model Bool
 
 instance Model a => Model (Maybe a)
