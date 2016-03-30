@@ -7,7 +7,7 @@
 module Data.Model.Types(ADT(..),ConTree(..),conTreeTypeMap
                        ,Type(..),TypeN(..),typeN,typeA,TypeRef(..)
                        ,QualName(..),qualName
-                       ,HADT,HType,HTypeRef,HEnv
+                       ,HADT,HType,HTypeRef,HEnv,fieldsTypes,fieldsNames
                        ,module GHC.Generics,Proxy(..)) where
 
 import           Data.Bifunctor (second)
@@ -75,15 +75,14 @@ data ConTree ref =
 
   deriving (Eq, Ord, Read, Show, Generic)
 
--- ????
--- -- |Return just the field types
--- fieldsTypes :: Either [b] [(a, b)] -> [b]
--- fieldsTypes (Left ts)   = ts
--- fieldsTypes (Right nts) = map snd nts
+-- |Return just the field types
+fieldsTypes :: Either [b] [(a, b)] -> [b]
+fieldsTypes (Left ts)   = ts
+fieldsTypes (Right nts) = map snd nts
 
--- -- |Return just the field names (or an empty list if unspecified)
--- fieldsNames (Left _)   = []
--- fieldsNames (Right nts) = map snd nts
+-- |Return just the field names (or an empty list if unspecified)
+fieldsNames (Left _)   = []
+fieldsNames (Right nts) = map snd nts
 
 -- GHC won't derive these instances automatically
 instance Functor ConTree where
