@@ -1,1 +1,1 @@
-Derive a model of a data type using Generics.
+Derivation of data type models from Haskell data types.
