@@ -32,6 +32,9 @@ v = let tr = typeRep (undefined::Proxy (Phantom Char))
 x = hTypeEnv (Proxy :: Proxy ([Bool]))
 z = hTypeEnv (Proxy :: Proxy String)
 
+p = ppr $ hType (Proxy :: Proxy (Bool))
+
+
 qhType = (mdlRef <$>) . hType
 
 tsts = [hTypeEnv (Proxy :: Proxy Void)

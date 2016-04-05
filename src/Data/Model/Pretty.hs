@@ -8,6 +8,9 @@ import           Data.Char
 import           Data.List
 import           Data.Model.Types
 import           Text.PrettyPrint.HughesPJClass
+import Data.Foldable
+
+t = renderStyle (style {mode=PageMode}) . pPrint $ "data Bool =" <> nest 5 (vcat ["False","True"])
 
 instance (Pretty n,Pretty r) => Pretty (ADT n r) where
   pPrint adt = text "data" <+> pPrint (declName adt) <+> vars adt <+> maybe (text "") (\c -> char '=' <+> pPrint c) (declCons adt)
@@ -18,7 +21,9 @@ varP n = char $ chr ( (ord 'a') + (fromIntegral n))
 instance Pretty n => Pretty (ConTree n) where
   pPrint (Con n (Left fs)) = text n <+> spacedP fs
   pPrint (Con n (Right nfs)) = text n <+> "{" <+> sep (punctuate "," (map (\(n,t) -> text n <+> "::" <+> pPrint t) nfs)) <+> "}"
-  pPrint (ConTree l r) = pPrint l <+> char '|' <+> pPrint r
+  -- pPrint (ConTree l r) = pPrint l <+> char '|' <+> pPrint r
+  pPrint tr@(ConTree l r) = let (h:t) = constructors tr
+                            in vcat (char ' ' <+> pPrint h : map (\c -> (char '|') <+> pPrint c) t)
 
 instance Pretty r => Pretty (Type r) where
   pPrint = pPrint . typeN

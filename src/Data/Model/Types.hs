@@ -4,7 +4,7 @@
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE DeriveTraversable #-}
-module Data.Model.Types(ADT(..),ConTree(..),conTreeTypeMap
+module Data.Model.Types(ADT(..),ConTree(..),constructors,conTreeTypeMap
                        ,Type(..),TypeN(..),typeN,typeA,TypeRef(..)
                        ,QualName(..),qualName
                        ,HADT,HType,HTypeRef,HEnv,fieldsTypes,fieldsNames
@@ -69,11 +69,14 @@ data ConTree ref =
   One Two  Three    |
                  Four Five
 
-  To get a list of constructor in declaration order, use: toList
+  To get a list of constructor in declaration order, use constructors
   -}
   | ConTree (ConTree ref) (ConTree ref)
 
   deriving (Eq, Ord, Read, Show, Generic)
+
+constructors c@(Con _ _) = [c]
+constructors (ConTree l r) = constructors l ++ constructors r
 
 -- |Return just the field types
 fieldsTypes :: Either [b] [(a, b)] -> [b]
