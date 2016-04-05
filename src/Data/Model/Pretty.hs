@@ -10,7 +10,7 @@ import           Data.Model.Types
 import           Text.PrettyPrint.HughesPJClass
 import Data.Foldable
 
-t = renderStyle (style {mode=PageMode}) . pPrint $ "data Bool =" <> nest 5 (vcat ["False","True"])
+-- t = renderStyle (style {mode=PageMode}) . pPrint $ "data Bool =" <> nest 5 (vcat ["False","True"])
 
 instance (Pretty n,Pretty r) => Pretty (ADT n r) where
   pPrint adt = text "data" <+> pPrint (declName adt) <+> vars adt <+> maybe (text "") (\c -> char '=' <+> pPrint c) (declCons adt)
