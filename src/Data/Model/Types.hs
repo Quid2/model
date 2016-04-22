@@ -1,18 +1,22 @@
 {- |A model for simple algebraic data types.
 -}
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE DeriveTraversable #-}
-module Data.Model.Types(ADT(..),ConTree(..),constructors,conTreeTypeMap
-                       ,Type(..),TypeN(..),typeN,typeA,TypeRef(..)
-                       ,QualName(..),qualName
-                       ,HADT,HType,HTypeRef,HEnv,fieldsTypes,fieldsNames
-                       ,module GHC.Generics,Proxy(..)) where
+module Data.Model.Types(
+  ADT(..)
+  ,ConTree(..),constructors,conTreeTypeMap,conTreeTypeList,conTreeTypeFoldMap
+  ,Type(..),TypeN(..),typeN,typeA,TypeRef(..)
+  ,QualName(..),qualName
+  ,HADT,HType,HTypeRef,HEnv,fieldsTypes,fieldsNames
+  ,module GHC.Generics,Proxy(..)) where
 
-import           Data.Bifunctor (second)
+import           Control.DeepSeq
+import           Data.Bifunctor  (second)
 import           Data.Proxy
-import           Data.Word      (Word8)
+import           Data.Word       (Word8)
 import           GHC.Generics
 
 -- |Haskell ADT.
@@ -29,7 +33,7 @@ type HEnv = [HADT]
 
 -- |A fully qualified name
 data QualName = QualName {pkgName,mdlName,locName :: String}
-              deriving (Eq, Ord, Read, Show, Generic)
+              deriving (Eq, Ord, Read, Show, NFData, Generic)
 
 -- |Return the qualified name, minus the package name.
 qualName :: QualName -> String
@@ -42,7 +46,7 @@ data ADT name ref =
          , declNumParameters :: Word8
          , declCons          :: Maybe (ConTree ref)
          }
-       deriving (Eq, Ord, Read, Show, Generic, Functor, Foldable, Traversable)
+       deriving (Eq, Ord, Read, Show, NFData, Generic, Functor, Foldable, Traversable)
 
 -- | Constructors
 data ConTree ref =
@@ -73,7 +77,7 @@ data ConTree ref =
   -}
   | ConTree (ConTree ref) (ConTree ref)
 
-  deriving (Eq, Ord, Read, Show, Generic)
+  deriving (Eq, Ord, Read, Show, NFData, Generic)
 
 constructors c@(Con _ _) = [c]
 constructors (ConTree l r) = constructors l ++ constructors r
@@ -94,9 +98,9 @@ instance Functor ConTree where
   fmap f (Con n (Right ts)) = Con n (Right $ (fmap . fmap . fmap) f ts)
 
 instance Foldable ConTree where
-  foldMap f (ConTree l r) = foldMap f l `mappend` foldMap f r
-  foldMap f (Con _ (Left ts)) = mconcat . map (foldMap f) $ ts
-  foldMap f (Con _ (Right nts)) = mconcat . map (foldMap f . snd) $ nts
+   foldMap f (ConTree l r) = foldMap f l `mappend` foldMap f r
+   foldMap f (Con _ (Left ts)) = mconcat . map (foldMap f) $ ts
+   foldMap f (Con _ (Right nts)) = mconcat . map (foldMap f . snd) $ nts
 
 instance Traversable ConTree where
   traverse f (ConTree l r) = ConTree <$> traverse f l <*> traverse f r
@@ -110,14 +114,22 @@ conTreeTypeMap f (ConTree l r) = ConTree (conTreeTypeMap f l) (conTreeTypeMap f 
 conTreeTypeMap f (Con n (Left ts)) = Con n (Left $ map f ts)
 conTreeTypeMap f (Con n (Right nts)) = Con n (Right $ map (second f) nts)
 
+conTreeTypeList :: ConTree t -> [Type t]
+conTreeTypeList = conTreeTypeFoldMap (:[])
+
+conTreeTypeFoldMap :: Monoid a => (Type t -> a) -> ConTree t -> a
+conTreeTypeFoldMap f (ConTree l r) = conTreeTypeFoldMap f l `mappend` conTreeTypeFoldMap f r
+conTreeTypeFoldMap f (Con _ (Left ts)) = mconcat . map f $ ts
+conTreeTypeFoldMap f (Con _ (Right nts)) = mconcat . map (f . snd) $ nts
+
 -- |A type
 data Type ref = TypeCon ref -- Type constructor ('Bool','Maybe')
               | TypeApp (Type ref) (Type ref)
-  deriving (Eq, Ord, Read, Show, Generic, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Read, Show, NFData, Generic, Functor, Foldable, Traversable)
 
 -- |Another representation of type, sometime easier to work with
 data TypeN r = TypeN r [TypeN r]
-             deriving (Eq,Ord,Read,Show,Generic,Functor,Foldable,Traversable)
+             deriving (Eq,Ord,Read,Show,NFData ,Generic,Functor,Foldable,Traversable)
 
 -- |Convert from Type to TypeN
 typeN :: Type r -> TypeN r
@@ -133,8 +145,7 @@ typeA (TypeN t ts) = app (TypeCon t) (map typeA ts)
   where app t [] = t
         app t (x:xs) = app (TypeApp t x) xs
 
-
 -- |A reference to a type
 data TypeRef name = TypVar Word8  -- Type variable
                   | TypRef name   -- Type reference
-  deriving (Eq, Ord, Read, Show, Generic, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Read, Show, NFData, Generic, Functor, Foldable, Traversable)
