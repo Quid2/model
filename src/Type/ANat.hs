@@ -9,7 +9,7 @@ import GHC.TypeLits
 -- Envelope to get Nats with * kind 
 data ANat (n :: Nat)
 
--- |Conversion a Nat to the corresponding Integer
+-- |Convert a Nat to the corresponding Integer
 anatVal :: KnownNat n => ANat n -> Integer
 anatVal = natVal
 

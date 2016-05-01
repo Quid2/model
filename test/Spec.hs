@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts ,NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts ,NoMonomorphismRestriction ,DeriveGeneric ,ScopedTypeVariables #-}
 import qualified Data.Either
 import           Data.List
 import           Data.Model
@@ -9,9 +9,11 @@ import qualified GHC.Types
 import           Test.Data
 import           Test.Data.Model
 import qualified Test.Data2            as Data2
+import qualified Test.Data3            as Data3
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck as QC
+import Data.Word
 
 t = main
 
@@ -32,8 +34,7 @@ v = let tr = typeRep (undefined::Proxy (Phantom Char))
 x = hTypeEnv (Proxy :: Proxy ([Bool]))
 z = hTypeEnv (Proxy :: Proxy String)
 
-p = ppr $ hType (Proxy :: Proxy (Bool))
-
+p = prettyShow $ hType (Proxy :: Proxy (Bool))
 
 qhType = (mdlRef <$>) . hType
 
@@ -55,6 +56,9 @@ tsts = [hTypeEnv (Proxy :: Proxy Void)
        -- ,hTypeEnv (Proxy :: Proxy MM3)
        ,hTypeEnv (Proxy :: Proxy (Phantom Unit))
        ,hTypeEnv (Proxy :: Proxy (List Bool))
+       ,hTypeEnv (Proxy :: Proxy (Data2.List Bool))
+       ,hTypeEnv (Proxy :: Proxy (Data3.List Bool))
+       ,hTypeEnv (Proxy :: Proxy (List (Data2.List (Data3.List Bool))))
        ,hTypeEnv (Proxy :: Proxy (Maybe Void))
        ,hTypeEnv (Proxy :: Proxy (Either Bool Unit))
        ,hTypeEnv (Proxy :: Proxy (RR Un Unit N))
@@ -89,6 +93,20 @@ instance Pretty Name where pPrint (Name n)= text n
 pr = print
 pp = putStrLn . prettyShow
 
+instance Model Char
+
+-- instance Model Int
+-- Provide models for Word8 .. using stand-in classes
+instance Model Word8 where envType _ = envType (Proxy::Proxy Word8SI)
+data Word8SI deriving Generic
+instance Model Word8SI
+
+-- TODO: Fix problems with types using symbolic constructors
+instance Model a => Model [a] where envType _ = envType (Proxy::Proxy (ListSI a))
+
+data ListSI a deriving Generic
+instance Model a => Model (ListSI a)
+
 ----- Create tests
 m = makeTest tsts
 --unitTests = undefined
@@ -108,10 +126,6 @@ unitTests = testGroup "Unit tests" [tst (Proxy :: Proxy Test.Data.Void ) ( (Type
   ,tst (Proxy :: Proxy GHC.Types.Bool ) ( (TypeCon (TypRef (Name "GHC.Types.Bool")),[ADT {declName = "GHC.Types.Bool", declNumParameters = 0, declCons = Just (ConTree (Con {constrName = "False", constrFields = Left []}) (Con {constrName = "True", constrFields = Left []}))}]) )
 
   ,tst (Proxy :: Proxy GHC.Types.Char ) ( (TypeCon (TypRef (Name "GHC.Types.Char")),[ADT {declName = "GHC.Types.Char", declNumParameters = 0, declCons = Just (Con {constrName = "", constrFields = Left [TypeCon (TypRef (Name "GHC.Types.Char"))]})}]) )
-
-  ,tst (Proxy :: Proxy (Test.Data.Model.ListSI GHC.Types.Char) ) ( (TypeApp (TypeCon (TypRef (Name "Test.Data.Model.ListSI"))) (TypeCon (TypRef (Name "GHC.Types.Char"))),[ADT {declName = "GHC.Types.Char", declNumParameters = 0, declCons = Just (Con {constrName = "", constrFields = Left [TypeCon (TypRef (Name "GHC.Types.Char"))]})},ADT {declName = "Test.Data.Model.ListSI", declNumParameters = 1, declCons = Nothing}]) )
-
-  ,tst (Proxy :: Proxy (Test.Data.Model.ListSI GHC.Types.Bool) ) ( (TypeApp (TypeCon (TypRef (Name "Test.Data.Model.ListSI"))) (TypeCon (TypRef (Name "GHC.Types.Bool"))),[ADT {declName = "GHC.Types.Bool", declNumParameters = 0, declCons = Just (ConTree (Con {constrName = "False", constrFields = Left []}) (Con {constrName = "True", constrFields = Left []}))},ADT {declName = "Test.Data.Model.ListSI", declNumParameters = 1, declCons = Nothing}]) )
 
   ,tst (Proxy :: Proxy Test.Data.N ) ( (TypeCon (TypRef (Name "Test.Data.N")),[ADT {declName = "Test.Data.N", declNumParameters = 0, declCons = Just (ConTree (ConTree (Con {constrName = "One", constrFields = Left []}) (Con {constrName = "Two", constrFields = Left []})) (ConTree (Con {constrName = "Three", constrFields = Left []}) (ConTree (Con {constrName = "Four", constrFields = Left []}) (Con {constrName = "Five", constrFields = Left []}))))}]) )
 

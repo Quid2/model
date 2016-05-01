@@ -33,8 +33,8 @@ instance Pretty r => Pretty (TypeN r) where
   pPrint (TypeN f as) = parens (pPrint f <+> spacedP as)
 
 instance Pretty n => Pretty (TypeRef n) where
-  pPrint (TypVar v)   = varP v
-  pPrint (TypRef s)   = pPrint s
+   pPrint (TypVar v)   = varP v
+   pPrint (TypRef s)   = pPrint s
 
 instance Pretty QualName where pPrint (QualName p m l) = dotted [p,m,l]
 

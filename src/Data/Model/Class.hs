@@ -2,12 +2,14 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Data.Model.Class(hType
                        ,hTypeEnv
                        ,Model(..)
-                       ) where
+                       ,AsType,Ana)
+       where
 
 import           Control.Monad
 import           Control.Monad.Trans.State.Lazy
@@ -22,12 +24,13 @@ import           GHC.Generics                   hiding (S)
 import qualified GHC.Generics                   as G
 import           Type.Analyse
 
-
-hType :: Model a => Data.Proxy.Proxy a -> HType
+-- hType :: Model a => Data.Proxy.Proxy a -> HType
+hType :: AsType (Ana a) => Proxy a -> HType
 hType = fst . hTypeEnv
 
 -- | Return the model for the given type, that's the type plus all the data types referred to, directly or indirectly
-hTypeEnv :: Model a => Proxy a -> (HType, HEnv)
+-- hTypeEnv :: Model a => Proxy a -> (HType, HEnv)
+hTypeEnv :: AsType (Ana a) => Proxy a -> (HType, [HADT])
 hTypeEnv p =
   let (ht, e) = runState (asTypeP p) emptyEnv
   in (ht, map fst $ defs e) -- trace (showEnv e) ht
@@ -93,6 +96,8 @@ closeCtx = modify (\e -> e {ctx = drop 1 (ctx e)})
 -- | Class of types whose model can be calculated
 -- Instances are derived automatically, provided that the data type has instances for Typeable and Generic
 class (Typeable a,AsType (Ana a)) => Model a where
+-- class (Typeable a) => Model a where
+-- class Model a where
 
   -- |Given a type proxy, update the environment with the ADTs referred by it and return the corresponding HType
   envType :: Proxy a -> State Env HType
