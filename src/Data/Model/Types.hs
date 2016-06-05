@@ -16,6 +16,8 @@ module Data.Model.Types(
 import           Control.DeepSeq
 import           Data.Bifunctor  (second)
 import           Data.Proxy
+import           Data.Text       (Text)
+import qualified Data.Text       as T
 import           Data.Word       (Word8)
 import           GHC.Generics
 
@@ -32,12 +34,12 @@ type HTypeRef = TypeRef QualName
 type HEnv = [HADT]
 
 -- |A fully qualified name
-data QualName = QualName {pkgName,mdlName,locName :: String}
+data QualName = QualName {pkgName,mdlName,locName :: Text}
               deriving (Eq, Ord, Read, Show, NFData, Generic)
 
 -- |Return the qualified name, minus the package name.
-qualName :: QualName -> String
-qualName n = mdlName n ++ "." ++ locName n
+qualName :: QualName -> Text
+qualName n = T.concat [mdlName n,T.pack ".",locName n]
 
 -- |Simple algebraic data type (not GADT), with a maximum of 255 type variables.
 data ADT name ref =
@@ -52,13 +54,13 @@ data ADT name ref =
 data ConTree ref =
   Con {
   -- | The constructor name, unique in the data type
-  constrName    :: String
+  constrName    :: Text
 
   -- | Constructor fields, they can be either unnamed (Left case) or named (Right case)
   -- If they are named, they must all be named
   ,constrFields :: Either
                    [Type ref]
-                   [(String,Type ref)]
+                   [(Text,Type ref)]
   }
 
   {- |Constructor tree.

@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts ,NoMonomorphismRestriction ,DeriveGeneric ,ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts ,NoMonomorphismRestriction ,DeriveGeneric ,ScopedTypeVariables ,OverloadedStrings #-}
 import qualified Data.Either
 import           Data.List
 import           Data.Model
@@ -14,6 +14,7 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck as QC
 import Data.Word
+import qualified Data.Text as T
 
 t = main
 
@@ -87,8 +88,8 @@ mdlRef :: HTypeRef -> TypeRef Name
 mdlRef (TypVar v)   = TypVar v
 mdlRef (TypRef n)   = TypRef (Name $ qualName n)
 
-data Name = Name String deriving (Eq,Show)
-instance Pretty Name where pPrint (Name n)= text n
+data Name = Name T.Text deriving (Eq,Show)
+instance Pretty Name where pPrint (Name n)= text (T.unpack n)
 
 pr = print
 pp = putStrLn . prettyShow

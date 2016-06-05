@@ -2,11 +2,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Data.Model.Pretty(
   Pretty(..),module Text.PrettyPrint.HughesPJClass,dotted,spacedP,varP
+  ,ptext,txt
   ) where
 
 import           Data.Char
 import           Data.List
 import           Data.Model.Types
+import qualified Data.Text       as T
 import           Text.PrettyPrint.HughesPJClass
 import Data.Foldable
 
@@ -19,8 +21,8 @@ vars adt = spaced . map varP . map (\x -> x-1) $ [1 .. declNumParameters adt]
 varP n = char $ chr ( (ord 'a') + (fromIntegral n))
 
 instance Pretty n => Pretty (ConTree n) where
-  pPrint (Con n (Left fs)) = text n <+> spacedP fs
-  pPrint (Con n (Right nfs)) = text n <+> "{" <+> sep (punctuate "," (map (\(n,t) -> text n <+> "::" <+> pPrint t) nfs)) <+> "}"
+  pPrint (Con n (Left fs)) = txt n <+> spacedP fs
+  pPrint (Con n (Right nfs)) = txt n <+> "{" <+> sep (punctuate "," (map (\(n,t) -> txt n <+> "::" <+> pPrint t) nfs)) <+> "}"
   -- pPrint (ConTree l r) = pPrint l <+> char '|' <+> pPrint r
   pPrint tr@(ConTree l r) = let (h:t) = constructors tr
                             in vcat (char ' ' <+> pPrint h : map (\c -> (char '|') <+> pPrint c) t)
@@ -44,5 +46,7 @@ spacedP :: Pretty a => [a] -> Doc
 spacedP = spaced . map pPrint
 spaced = sep
 
-dotted :: [String] -> Doc
-dotted = text . intercalate "."
+dotted :: [T.Text] -> Doc
+dotted = txt . T.intercalate (T.pack ".")
+
+txt = text . T.unpack 

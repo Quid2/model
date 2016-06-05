@@ -7,7 +7,7 @@
 
 module Data.Model.Class(hType
                        ,hTypeEnv
-                       ,Model(..)
+                       ,Model(..),addCT
                        ,AsType,Ana)
        where
 
@@ -19,10 +19,10 @@ import           Data.List
 import           Data.Model.Types
 import           Data.Proxy
 import           Data.Typeable
---import           Debug.Trace
 import           GHC.Generics                   hiding (S)
 import qualified GHC.Generics                   as G
 import           Type.Analyse
+import qualified Data.Text       as T
 
 -- hType :: Model a => Data.Proxy.Proxy a -> HType
 hType :: AsType (Ana a) => Proxy a -> HType
@@ -104,16 +104,45 @@ class (Typeable a,AsType (Ana a)) => Model a where
 
   -- |Default, Generics based implementation
   default envType :: (Generic a, GModel (Rep a)) => Proxy a -> State Env HType
-  envType p = let tr = typeRep p
-                  (tc,ts) = splitTyConApp tr
-                  name = QualName (tyConPackage tc) (tyConModule tc) (tyConName tc)
-              in do
-                   inCtx <- enterCtx name
-                   unless inCtx $ do
-                        cs <- gcons (from (undefined :: a))
-                        addDef $ ADT name (fromIntegral $ length ts) $ cs
-                   closeCtx
-                   return . TypeCon . TypRef $ name
+  envType p = addCT_ False p $ gcons (from (undefined :: a))
+
+  -- envType p = let tr = typeRep p
+  --                 (tc,ts) = splitTyConApp tr
+  --                 name = QualName (tyConPackage tc) (tyConModule tc) (tyConName tc)
+  --             in do
+  --                    inCtx <- enterCtx name
+  --                    unless inCtx $ do
+  --                      cs <- gcons (from (undefined :: a))
+  --                      -- cs <- envTree p
+  --                      addDef $ ADT name (fromIntegral $ length ts) $ cs
+  --                    closeCtx
+  --                    return . TypeCon . TypRef $ name
+
+  -- envTree :: Proxy a -> State Env (Maybe (ConTree HTypeRef))
+  -- default envTree :: (Generic a, GModel (Rep a)) => Proxy a -> State Env (Maybe (ConTree HTypeRef))
+  -- envTree p =  let tr = typeRep p
+  --                  (tc,ts) = splitTyConApp tr
+  --                  name = QualName (tyConPackage tc) (tyConModule tc) (tyConName tc)
+  --               in do
+  --   cs <- gcons (from (undefined :: a))
+  --   -- cs <- envTree p
+  --   addDef $ ADT name (fromIntegral $ length ts) $ cs
+  --   return cs -- . TypeCon . TypRef $ name
+
+addCT = addCT_ True
+
+addCT_ useLocalName p mct =
+  let tr = typeRep p
+      (tc,ts) = splitTyConApp tr
+      nm name = T.pack $ if useLocalName then "" else name
+      name = QualName (nm $ tyConPackage tc) (nm $ tyConModule tc) (T.pack $ tyConName tc)
+  in do
+    inCtx <- enterCtx name
+    unless inCtx $ do
+      ct <- mct
+      addDef $ ADT name (fromIntegral $ length ts) $ ct
+    closeCtx
+    return . TypeCon . TypRef $ name
 
 -- |Helper class, uses Generics to capture the model of a data type
 -- Adapted from the Beamable package
@@ -121,7 +150,7 @@ class GModel f where
     gcons :: f a -> State Env (Maybe (ConTree HTypeRef))
     gcontree :: f a -> State Env (ConTree HTypeRef)
     gtype :: f a -> State Env HType
-    gtypeN :: f a -> State Env [Either HType (String,HType)]
+    gtypeN :: f a -> State Env [Either HType (T.Text,HType)]
 
 instance GModel (M1 D d V1) where
     gcons _ = return Nothing
@@ -137,7 +166,7 @@ instance (Datatype d, GModel a, GModel b) => GModel (M1 D d (a :+: b) ) where
 
 -- |Datatypes with multiple constructors
 instance (GModel a, Constructor c) => GModel (M1 C c a) where
-  gcontree x = Con (conName x) . toE . partitionEithers  <$> gtypeN (unM1 x)
+  gcontree x = Con (T.pack $ conName x) . toE . partitionEithers  <$> gtypeN (unM1 x)
     where
       toE (ls,[]) = Left ls
       toE ([],rs) = Right rs
@@ -150,7 +179,7 @@ instance (Selector c,GModel a) => GModel (M1 G.S c a) where
     gtypeN ~s@(M1 x) = (\t -> [let n = selName s
                                in if null n
                                   then Left t
-                                  else Right (n,t)
+                                  else Right (T.pack n,t)
                               ]) <$> gtype x
 
 instance (GModel a, GModel b) => GModel (a :*: b) where
