@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Data.Model.Pretty(
   Pretty(..),module Text.PrettyPrint.HughesPJClass,dotted,spacedP,varP
-  ,ptext,txt
+  ,ptext,txt,prettyADT
   ) where
 
 import           Data.Char
@@ -14,8 +14,9 @@ import Data.Foldable
 
 -- t = renderStyle (style {mode=PageMode}) . pPrint $ "data Bool =" <> nest 5 (vcat ["False","True"])
 
-instance (Pretty n,Pretty r) => Pretty (ADT n r) where
-  pPrint adt = text "data" <+> pPrint (declName adt) <+> vars adt <+> maybe (text "") (\c -> char '=' <+> pPrint c) (declCons adt)
+instance (Pretty n,Pretty r) => Pretty (ADT n r) where pPrint = prettyADT "data" '='
+
+prettyADT pre eq adt = text pre <+> pPrint (declName adt) <+> vars adt <+> maybe (text "") (\c -> char eq <+> pPrint c) (declCons adt)
 
 vars adt = spaced . map varP . map (\x -> x-1) $ [1 .. declNumParameters adt]
 varP n = char $ chr ( (ord 'a') + (fromIntegral n))

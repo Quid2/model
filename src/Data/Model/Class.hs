@@ -8,7 +8,7 @@
 module Data.Model.Class(hType
                        ,hTypeEnv
                        ,Model(..),addCT
-                       ,AsType,Ana)
+                       ,AsType(..),Ana,Typ)
        where
 
 import           Control.Monad
@@ -42,7 +42,7 @@ asTypeP _ = asType (undefined :: Ana a)
 class AsType a where
   asType :: a -> State Env HType
 
-instance Model a => AsType (Typ a) where
+instance {-# OVERLAPPABLE #-} Model a => AsType (Typ a) where
   asType _ = envType (Proxy::Proxy a)
 
 instance (AsType f,AsType a) => AsType (App f a) where

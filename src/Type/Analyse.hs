@@ -17,6 +17,7 @@ test = undefined :: Ana (Either (Maybe Bool) (Int,Maybe Integer,Char,Integer))
 -- BUG: silently fails for unsupported arities
 type family Ana t where
    -- Ana (f a b) = App (Ana (f a)) (Ana b)
+   Ana (f a b c d e) = App (App (App (App (App (Typ (f A0 A1 A2 A3 A4)) (Ana a)) (Ana b)) (Ana c)) (Ana d)) (Ana e)
    Ana (f a b c d) = App (App (App (App (Typ (f A0 A1 A2 A3)) (Ana a)) (Ana b)) (Ana c)) (Ana d)
    Ana (f a b c)   = App (App (App (Typ (f A0 A1 A2)) (Ana a)) (Ana b)) (Ana c)
    Ana (f a b)     = App (App (Typ (f A0 A1)) (Ana a)) (Ana b)
