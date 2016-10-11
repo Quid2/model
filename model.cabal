@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Data.Model,Data.Model.Class,Data.Model.Instances,Data.Model.Pretty,Data.Model.Types,Type.ANat,Type.Analyse
-  build-depends:       base >= 4.7 && < 5, deepseq >= 1.4, pretty >= 1.1.2.0, text, transformers >= 0.4
+  build-depends:       base >= 4.7 && < 5, containers >= 0.5.6.2, deepseq >= 1.4, pretty >= 1.1.2.0, text, transformers >= 0.4
   default-language:    Haskell2010
 
 test-suite model-test

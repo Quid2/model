@@ -42,11 +42,12 @@ asTypeP _ = asType (undefined :: Ana a)
 class AsType a where
   asType :: a -> State Env HType
 
-instance {-# OVERLAPPABLE #-} Model a => AsType (Typ a) where
-  asType _ = envType (Proxy::Proxy a)
+instance {-# OVERLAPPABLE #-} Model a => AsType (Typ a) where asType _ = envType (Proxy::Proxy a)
 
 instance (AsType f,AsType a) => AsType (App f a) where
   asType _ = TypeApp <$> asType (undefined::f) <*> asType (undefined::a)
+
+--instance (KnownNat t,Typeable t) => AsType (Typ (ANat t)) where asType _ = envType (Proxy::Proxy a)
 
 -- |TypeLits are used to represent data type's parameters.
 instance (KnownNat t,Typeable t) => Model (ANat t) where
@@ -134,23 +135,23 @@ addCT = addCT_ True
 addCT_ useLocalName p mct =
   let tr = typeRep p
       (tc,ts) = splitTyConApp tr
-      nm name = T.pack $ if useLocalName then "" else name
-      name = QualName (nm $ tyConPackage tc) (nm $ tyConModule tc) (T.pack $ tyConName tc)
+      nm hname = name $ if useLocalName then "" else hname
+      qname = QualName (nm $ tyConPackage tc) (nm $ tyConModule tc) (name $ tyConName tc)
   in do
-    inCtx <- enterCtx name
+    inCtx <- enterCtx qname
     unless inCtx $ do
       ct <- mct
-      addDef $ ADT name (fromIntegral $ length ts) $ ct
+      addDef $ ADT qname (fromIntegral $ length ts) $ ct
     closeCtx
-    return . TypeCon . TypRef $ name
+    return . TypeCon . TypRef $ qname
 
 -- |Helper class, uses Generics to capture the model of a data type
 -- Adapted from the Beamable package
 class GModel f where
-    gcons :: f a -> State Env (Maybe (ConTree HTypeRef))
-    gcontree :: f a -> State Env (ConTree HTypeRef)
+    gcons :: f a -> State Env (Maybe (ConTree Name HTypeRef))
+    gcontree :: f a -> State Env (ConTree Name HTypeRef)
     gtype :: f a -> State Env HType
-    gtypeN :: f a -> State Env [Either HType (T.Text,HType)]
+    gtypeN :: f a -> State Env [Either HType (Name,HType)]
 
 instance GModel (M1 D d V1) where
     gcons _ = return Nothing
@@ -166,7 +167,7 @@ instance (Datatype d, GModel a, GModel b) => GModel (M1 D d (a :+: b) ) where
 
 -- |Datatypes with multiple constructors
 instance (GModel a, Constructor c) => GModel (M1 C c a) where
-  gcontree x = Con (T.pack $ conName x) . toE . partitionEithers  <$> gtypeN (unM1 x)
+  gcontree x = Con (name $ conName x) . toE . partitionEithers  <$> gtypeN (unM1 x)
     where
       toE (ls,[]) = Left ls
       toE ([],rs) = Right rs
@@ -179,7 +180,7 @@ instance (Selector c,GModel a) => GModel (M1 G.S c a) where
     gtypeN ~s@(M1 x) = (\t -> [let n = selName s
                                in if null n
                                   then Left t
-                                  else Right (T.pack n,t)
+                                  else Right (name n,t)
                               ]) <$> gtype x
 
 instance (GModel a, GModel b) => GModel (a :*: b) where

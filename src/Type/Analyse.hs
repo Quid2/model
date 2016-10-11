@@ -7,9 +7,18 @@
 module Type.Analyse(Ana,App,Typ,module Type.ANat) where
 
 import Type.ANat
+-- import qualified Data.Map as M
 
 test :: App (App (Typ (Either A0 A1)) (App (Typ (Maybe A0)) (Typ Bool))) (App (App (App (App (Typ (A0, A1, A2, A3)) (Typ Int)) (App (Typ (Maybe A0)) (Typ Integer))) (Typ Char)) (Typ Integer))
 test = undefined :: Ana (Either (Maybe Bool) (Int,Maybe Integer,Char,Integer))
+
+t2 = undefined :: Ana (Bool,(Bool,Char))
+
+--t3 :: App (App (Typ (M.Map A0 A1)) (Typ Bool)) (Typ ())
+--t3 = undefined :: Ana (M.Map Bool ())
+
+t4 :: App (Typ [A0]) (App (App (Typ (A0, A1)) (Typ Bool)) (Typ ()))
+t4 = undefined :: Ana ([(Bool,())])
 
 -- | Convert a type with specific parameters to a type applied to variables (or more precisely types standing for variables)
 -- |For example convert 'Either Word (Maybe Char)' to something equivalent to '(Either a b) Word ((Maybe a) Char)' or '(\a b -> Either a b) Word ((\a -> Maybe a) Char)'

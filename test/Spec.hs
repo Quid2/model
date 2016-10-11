@@ -1,7 +1,7 @@
-{-# LANGUAGE FlexibleContexts ,NoMonomorphismRestriction ,DeriveGeneric ,ScopedTypeVariables ,OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts ,NoMonomorphismRestriction ,DeriveGeneric ,ScopedTypeVariables ,OverloadedStrings, StandaloneDeriving #-}
 import qualified Data.Either
 import           Data.List
-import           Data.Model
+import           Data.Model hiding (Name)
 import           Data.Traversable
 import           Data.Typeable
 import qualified GHC.Base
@@ -86,7 +86,7 @@ simpleADT adt = ADT (qualName . declName $ adt) (declNumParameters adt) ((mdlRef
 
 mdlRef :: HTypeRef -> TypeRef Name
 mdlRef (TypVar v)   = TypVar v
-mdlRef (TypRef n)   = TypRef (Name $ qualName n)
+mdlRef (TypRef n)   = TypRef (Name $ T.pack $ qualName n)
 
 data Name = Name T.Text deriving (Eq,Show)
 instance Pretty Name where pPrint (Name n)= text (T.unpack n)
@@ -94,11 +94,16 @@ instance Pretty Name where pPrint (Name n)= text (T.unpack n)
 pr = print
 pp = putStrLn . prettyShow
 
-instance Model Char
+-- THIS STOPPED WORKING (ghc 8.01?)
+-- instance Model Char
+
+instance Model Char where envType _ = envType (Proxy::Proxy CharSI)
+data CharSI deriving Generic
+instance Model CharSI
 
 -- instance Model Int
 -- Provide models for Word8 .. using stand-in classes
-instance Model Word8 where envType _ = envType (Proxy::Proxy Word8SI)
+instance Model Word8 where envType _ = envType (Proxy::Proxy Word8SI) fS
 data Word8SI deriving Generic
 instance Model Word8SI
 
