@@ -94,7 +94,7 @@ instance Pretty Name where pPrint (Name n)= text (T.unpack n)
 pr = print
 pp = putStrLn . prettyShow
 
--- THIS STOPPED WORKING (ghc 8.01?)
+-- THIS STOPPED WORKING (ghc 8.01?), Char not instance of Generic
 -- instance Model Char
 
 instance Model Char where envType _ = envType (Proxy::Proxy CharSI)
@@ -103,7 +103,7 @@ instance Model CharSI
 
 -- instance Model Int
 -- Provide models for Word8 .. using stand-in classes
-instance Model Word8 where envType _ = envType (Proxy::Proxy Word8SI) fS
+instance Model Word8 where envType _ = envType (Proxy::Proxy Word8SI)
 data Word8SI deriving Generic
 instance Model Word8SI
 
@@ -131,7 +131,9 @@ unitTests = testGroup "Unit tests" [tst (Proxy :: Proxy Test.Data.Void ) ( (Type
 
   ,tst (Proxy :: Proxy GHC.Types.Bool ) ( (TypeCon (TypRef (Name "GHC.Types.Bool")),[ADT {declName = "GHC.Types.Bool", declNumParameters = 0, declCons = Just (ConTree (Con {constrName = "False", constrFields = Left []}) (Con {constrName = "True", constrFields = Left []}))}]) )
 
-  ,tst (Proxy :: Proxy GHC.Types.Char ) ( (TypeCon (TypRef (Name "GHC.Types.Char")),[ADT {declName = "GHC.Types.Char", declNumParameters = 0, declCons = Just (Con {constrName = "", constrFields = Left [TypeCon (TypRef (Name "GHC.Types.Char"))]})}]) )
+  -- ,tst (Proxy :: Proxy GHC.Types.Char ) ( (TypeCon (TypRef (Name "GHC.Types.Char")),[ADT {declName = "GHC.Types.Char", declNumParameters = 0, declCons = Just (Con {constrName = "", constrFields = Left [TypeCon (TypRef (Name "GHC.Types.Char"))]})}]) )
+
+  ,tst (Proxy :: Proxy GHC.Types.Char ) (TypeCon (TypRef (Name "Main.CharSI")),[ADT {declName = "Main.CharSI", declNumParameters = 0, declCons = Nothing}])
 
   ,tst (Proxy :: Proxy Test.Data.N ) ( (TypeCon (TypRef (Name "Test.Data.N")),[ADT {declName = "Test.Data.N", declNumParameters = 0, declCons = Just (ConTree (ConTree (Con {constrName = "One", constrFields = Left []}) (Con {constrName = "Two", constrFields = Left []})) (ConTree (Con {constrName = "Three", constrFields = Left []}) (ConTree (Con {constrName = "Four", constrFields = Left []}) (Con {constrName = "Five", constrFields = Left []}))))}]) )
 
