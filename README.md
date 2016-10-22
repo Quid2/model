@@ -7,7 +7,6 @@ It is not yet on [hackage](https://hackage.haskell.org/) so to use in your [stac
 
 ````
 packages:
-...
 - location: https://github.com/tittoassini/model/archive/master.zip
 ````
 
