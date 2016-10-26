@@ -3,15 +3,14 @@ Derivation of data type models from Haskell data types.
 
 ### Installation
 
-It is not yet on [hackage](https://hackage.haskell.org/) but you can still use it in your [stack](https://docs.haskellstack.org/en/stable/README/) projects by adding a reference to its github location under the 'packages' section:
+It is not yet on [hackage](https://hackage.haskell.org/) but you can use it in your [stack](https://docs.haskellstack.org/en/stable/README/) projects by adding in the `stack.yaml` file, under the `packages` section:
 
 ````
-packages:
 - location:
-    git: https://github.com/tittoassini/model
-    commit: 0e1fe4f
+   git: https://github.com/tittoassini/model
+   commit: b05a56a993213271e3b13d28a5e8bb90c9d8576f
+  extra-dep: true
 ````
-
 
 ### Compatibility
 
