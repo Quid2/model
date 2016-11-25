@@ -21,7 +21,7 @@ instance( Pretty exRef,Ord exRef,Show exRef,S.StringLike adtName,S.StringLike co
   pPrint (TypeModel t e) = vcat $ [
      text "Type:"
     ,pPrint t <+> text "->" <+> pPrint (localName . declName <$> solveAll e t)
-    ,text ""
+    -- ,text "" -- Results in a split display
     ,text "Environment:"]
      ++ map (\(ref,adt) -> pPrint ref <+> text "->" <+> pPrint (stringADT e adt)) (M.assocs e)
 

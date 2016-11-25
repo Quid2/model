@@ -51,9 +51,6 @@ pPrint $ typeModel (Proxy:: Proxy (Couple Direction Bool))
 Type:
 main.Main.Couple main.Main.Direction
                  ghc-prim.GHC.Types.Bool -> Couple Direction Bool
-```
-
-```haskell
 Environment:
 ghc-prim.GHC.Types.Bool ->  Bool ≡   False
                                    | True
@@ -75,9 +72,6 @@ instance (Model a) => Model [a]
 pPrint $ typeModel (Proxy:: Proxy [Bool])
 Type:
 ghc-prim.GHC.Types.[] ghc-prim.GHC.Types.Bool -> [] Bool
-```
-
-```haskell
 Environment:
 ghc-prim.GHC.Types.Bool ->  Bool ≡   False
                                    | True
@@ -124,4 +118,4 @@ Tested with [ghc](https://www.haskell.org/ghc/) 7.10.3 and 8.0.1.
 
   `instance (Model a,Model b) => Model (Couple a b)`
 
-* Works incorrectly with data types with more than 8 type variables.
+* Works incorrectly with data types with more than 9 type variables.
