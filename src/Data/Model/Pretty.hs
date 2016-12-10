@@ -75,6 +75,6 @@ spacedP = sep . map pPrint
 vspacedP :: Pretty a => [a] -> Doc
 vspacedP = sep . intersperse (text "") . map pPrint
 
--- |Intercalate with '.'
+-- |Intercalate with .
 dotted :: [String] -> Doc
 dotted = text . intercalate "."

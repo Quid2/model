@@ -5,5 +5,6 @@ module Data.Model (
 
 import Data.Model.Class as X
 import Data.Model.Types as X
-import Data.Model.Instances as X
+import Data.Model.Instances()
 import Data.Model.Pretty as X
+import Data.Model.Util as X

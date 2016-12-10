@@ -1,13 +1,13 @@
-{- |A model for simple algebraic data types.
--}
+-- |A model for simple algebraic data types.
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE DeriveTraversable ,FlexibleInstances #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Data.Model.Types(
   -- *Model
-  TypeModel(..),TypeEnv
+  TypeModel(..),TypeEnv,typeADTs
   ,ADT(..)
   ,ConTree(..)
   ,Type(..),TypeN(..),TypeRef(..)
@@ -19,28 +19,30 @@ module Data.Model.Types(
   ,adtNamesMap
   --,typeADTs
   ,typeN,typeA
-  ,constructors,conTreeNameMap,conTreeTypeMap,conTreeTypeList,conTreeTypeFoldMap,fieldsTypes,fieldsNames
+  ,constructors,constructorInfo,conTreeNameMap,conTreeTypeMap,conTreeTypeList,conTreeTypeFoldMap,fieldsTypes,fieldsNames
 
   -- *Handy aliases
   ,HTypeEnv,HTypeModel,HADT,HType,HTypeRef
   -- ,HEnv
 
   -- *Utilities
-  ,solve,solveAll,unVar
+  ,solve,solveAll,unVar,getHRef
 
   -- *Re-exports
   ,module GHC.Generics,Proxy(..)
-  -- ,S.StringLike(),S.toString,S.fromString
+
   ) where
 
+import           Control.Applicative
 import           Control.DeepSeq
-import           Data.Bifunctor  (first,second)
+import           Data.Bifunctor       (first, second)
+import           Data.List
+import qualified Data.ListLike.String as S
+import qualified Data.Map             as M
+import           Data.Maybe
 import           Data.Proxy
-import           Data.Word       (Word8)
+import           Data.Word            (Word8)
 import           GHC.Generics
-import qualified Data.Map as M
-import qualified Data.ListLike.String           as S
-import Data.List
 
 -- |Haskell Environment
 type HTypeEnv = TypeEnv String String (TypeRef QualName) QualName
@@ -74,7 +76,9 @@ data TypeModel adtName consName inRef exRef = TypeModel {
   }
   deriving (Eq, Ord, Show, NFData, Generic)
 
---typeADTs = M.elems . typeEnv
+-- |The ADTs defined in the TypeModel
+typeADTs :: TypeModel adtName consName inRef k -> [ADT adtName consName inRef]
+typeADTs = M.elems . typeEnv
 
 -- |A map of all the ADTs that are directly or indirectly referred by a type, indexed by a type reference
 type TypeEnv adtName consName inRef exRef = M.Map exRef (ADT adtName consName inRef)
@@ -130,7 +134,8 @@ data ConTree name ref =
   deriving (Eq, Ord, Show, NFData, Generic)
 
 -- |Return the list of constructors in definition order
-constructors c@(Con _ _) = [c]
+constructors :: ConTree t t1 -> [ConTree t t1]
+constructors c@(Con _ _)   = [c]
 constructors (ConTree l r) = constructors l ++ constructors r
 
 -- |Return just the field types
@@ -139,18 +144,30 @@ fieldsTypes (Left ts)   = ts
 fieldsTypes (Right nts) = map snd nts
 
 -- |Return just the field names (or an empty list if unspecified)
-fieldsNames (Left _)   = []
+fieldsNames :: Either t [(a, t1)] -> [t1]
+fieldsNames (Left _)    = []
 fieldsNames (Right nts) = map snd nts
+
+-- |Return the binary encoding and parameter types of a constructor
+-- The binary encoding is the sequence of Left (False) and Right (True) turns
+-- needed to reach the constructor from the constructor tree root.
+constructorInfo :: Eq consName => consName -> ADT name consName ref -> Maybe ([Bool], [Type ref])
+constructorInfo consName dt = declCons dt >>= ((first reverse <$>) . loc [])
+  where
+    -- |Locate constructor in tree
+    loc bs (Con n ps) | n == consName = Just (bs,fieldsTypes ps)
+                      | otherwise = Nothing
+    loc bs (ConTree l r) = loc (False:bs) l <|> loc (True:bs) r
 
 -- GHC won't derive these instances automatically
 instance Functor (ConTree name) where
-  fmap f (ConTree l r) = ConTree (fmap f l) (fmap f r)
-  fmap f (Con n (Left ts)) = Con n (Left $ (fmap . fmap) f ts)
+  fmap f (ConTree l r)      = ConTree (fmap f l) (fmap f r)
+  fmap f (Con n (Left ts))  = Con n (Left $ (fmap . fmap) f ts)
   fmap f (Con n (Right ts)) = Con n (Right $ (fmap . fmap . fmap) f ts)
 
 instance Foldable (ConTree name) where
-   foldMap f (ConTree l r) = foldMap f l `mappend` foldMap f r
-   foldMap f (Con _ (Left ts)) = mconcat . map (foldMap f) $ ts
+   foldMap f (ConTree l r)       = foldMap f l `mappend` foldMap f r
+   foldMap f (Con _ (Left ts))   = mconcat . map (foldMap f) $ ts
    foldMap f (Con _ (Right nts)) = mconcat . map (foldMap f . snd) $ nts
 
 instance Traversable (ConTree name) where
@@ -207,14 +224,22 @@ typeN (TypeCon r) = TypeN r []
 
 -- |Convert from TypeN to Type
 typeA :: TypeN ref -> Type ref
-typeA (TypeN t ts) = app (TypeCon t) (map typeA ts)
-  where app t [] = t
-        app t (x:xs) = app (TypeApp t x) xs
+typeA (TypeN tf ts) = foldl TypeApp (TypeCon tf) (map typeA ts)
 
 -- |A reference to a type
 data TypeRef name = TypVar Word8  -- ^Type variable
                   | TypRef name   -- ^Type reference
   deriving (Eq, Ord, Show, NFData, Generic, Functor, Foldable, Traversable)
+
+-- |Remove variable references (for example if we know that a type is fully saturated and cannot contain variables)
+unVar :: TypeRef t -> t
+unVar (TypVar _) = error "Unexpected variable"
+unVar (TypRef n) = n
+
+-- |Extract reference
+getHRef :: TypeRef a -> Maybe a
+getHRef (TypRef r) = Just r
+getHRef (TypVar _) = Nothing
 
 -- |A fully qualified Haskell name
 data QualName = QualName {pkgName,mdlName,locName :: String}
@@ -240,20 +265,14 @@ data Name = Name String deriving (Eq, Ord, Show, NFData, Generic)
 
 instance S.StringLike Name where
   toString (Name n)= n
-  fromString n = Name n
+  fromString = Name
 
 -- Utilities
 
--- |Remove variable references (for example if we know that a type is fully saturated and cannot contain variables)
-unVar (TypVar _) = error "Unexpected variable"
-unVar (TypRef n) = n
-
 -- |Solve all references in a data structure, using the given environment
 solveAll :: (Functor f, Show k, Ord k) => M.Map k b -> f k -> f b
-solveAll env t = (\r -> solve r env) <$> t
+solveAll env t = ((`solve` env)) <$> t
 
 -- |Solve a key in an environment, returns an error if the key is missing
 solve :: (Ord k, Show k) => k -> M.Map k a -> a
-solve k e = case M.lookup k e of
-     Nothing -> error $ unwords ["Unknown reference to",show k]
-     Just v -> v
+solve k e = fromMaybe (error $ unwords ["Unknown reference to",show k]) (M.lookup k e)
