@@ -1,5 +1,5 @@
 name:                model
-version:             0.2.3
+version:             0.2.4
 synopsis:            Derive a model of a data type using Generics
 description:         See the <http://github.com/tittoassini/model online tutorial>
 homepage:            http://github.com/tittoassini/model

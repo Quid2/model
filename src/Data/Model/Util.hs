@@ -1,4 +1,4 @@
-module Data.Model.Util(mutualGroups,recursively,Errors) where
+module Data.Model.Util(mutualGroups,dependencies,Errors) where
 
 import           Control.Monad
 import           Control.Monad.Trans.State
@@ -14,7 +14,7 @@ import           Data.Maybe
 mutualGroups :: (Ord r, Show r, Foldable t) => (a -> Maybe r) -> M.Map r (t a) -> [[r]]
 mutualGroups getRef env = recs [] (M.keys env)
   where
-    deps n = unsafely (recursively getRef env n)
+    deps n = unsafely (dependencies getRef env n)
     recs gs [] = gs
     recs gs (n:ns) =
       let mutual = filter (\o -> n `elem` deps o) (deps n)
@@ -23,13 +23,13 @@ mutualGroups getRef env = recs [] (M.keys env)
 -- |Return a list of the unique recursive dependencies of n in env
 -- excluding n, even if self-recursive
 --
--- >>> recursively Just (M.fromList [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])]) "a"
+-- >>> dependencies Just (M.fromList [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])]) "a"
 -- Right ["b","d","c"]
 --
--- >>> recursively Just (M.fromList [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])]) "b"
+-- >>> dependencies Just (M.fromList [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])]) "b"
 -- Right ["d","a","c"]
-recursively :: (Ord r, Show r, Foldable t) => (a -> Maybe r) -> M.Map r (t a) -> r -> Either Errors [r]
-recursively getRef env = execRec . deps
+dependencies :: (Ord r, Show r, Foldable t) => (a -> Maybe r) -> M.Map r (t a) -> r -> Either Errors [r]
+dependencies getRef env = execRec . deps
     where
       deps n = do
          present <- (n `elem`) <$> gets seen
