@@ -89,6 +89,6 @@ script:
       echo "[BUILD" && \
       cabal build && \
       echo "BUILD]" && \
-      cabal test > tst
+      travis_wait cabal test > tst
       ;;
   esac

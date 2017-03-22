@@ -5,13 +5,13 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE StandaloneDeriving        #-}
-import           Data.Bifunctor
+--import           Data.Bifunctor
 import qualified Data.Either
 import           Data.List
 import qualified Data.Map              as M
 import           Data.Model
-import           Data.Traversable
-import           Data.Typeable
+--import           Data.Traversable
+--import           Data.Typeable
 import           Data.Word
 import qualified GHC.Base
 import qualified GHC.Types
