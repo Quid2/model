@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/tittoassini/model.svg?branch=master)](https://travis-ci.org/tittoassini/model)
+
 With `model` you can easily derive models of Haskell data types.
 
 Let's see some code.
