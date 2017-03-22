@@ -28,11 +28,11 @@ import           Data.Typeable
 import qualified GHC.Generics                   as G
 import           Type.Analyse
 
--- | Return the model for the given type
+-- |Return the model for the given type
 typeModel :: AsType (Ana a) => Proxy a -> HTypeModel
 typeModel p = withEnv (asTypeP p)
 
--- We feed to the analyser the abstract version of the type
+-- We feed to the analyser the abstracted version of the type
 -- in order to distinguish between variable and non variable positions
 asTypeP :: forall a. AsType (Ana a) => Proxy a -> State Env HType
 asTypeP _ = asType (undefined :: Ana a)
@@ -67,11 +67,11 @@ class (Typeable a,AsType (Ana a)) => Model a where
   envType p = addCT_ False p $ gcons (from (undefined :: a))
 
 -- |Use the given constructors tree as model for the given type, returns the build type
---
 -- Exported so that it can be used to overwrite default definitions
 useCT :: Typeable a => Maybe (ConTree String HTypeRef) -> proxy a -> State Env (Type (TypeRef QualName))
 useCT ct p = addCT_ True p (return ct)
 
+addCT_ :: Typeable a => Bool -> proxy a -> State Env (Maybe (ConTree String HTypeRef)) -> State Env (Type (TypeRef QualName))
 addCT_ useLocalString p mct =
   let tr = typeRep p
       (tc,ts) = splitTyConApp tr
@@ -123,6 +123,7 @@ instance (GModel a, Constructor c) => GModel (M1 C c a) where
     where
       toE (ls,[]) = Left ls
       toE ([],rs) = Right rs
+      toE p = error . unwords $ ["toE: unexpected parameter",show p]
 
   gtype = notThere
   gtypeN = notThere
@@ -168,4 +169,5 @@ unL = error "unL should be used only for type recovery operations"
 unR :: (l :+: r) a -> r a
 unR = error "unR should be used only for type recovery operations"
 
-notThere = error "never called"
+notThere :: t
+notThere = error "this should be never called"

@@ -1,5 +1,7 @@
-resolver: lts-6.26
-# resolver: lts-7.10
+pvp-bounds: lower
+
+resolver: lts-6.30
+# resolver: lts-8.5
 
 packages:
 - '.'

@@ -1,4 +1,4 @@
--- |Instances of `Model` for common types (Bool,Maybe,Either)
+-- |Instances of `Model` for common types (Bool,Maybe,Either).
 module Data.Model.Instances where
 
 import           Data.Model.Class

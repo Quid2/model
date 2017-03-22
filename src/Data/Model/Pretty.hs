@@ -23,39 +23,37 @@ instance( Pretty exRef,Ord exRef,Show exRef,S.StringLike adtName,S.StringLike co
     ,pPrint t <+> text "->" <+> pPrint (localName . declName <$> solveAll e t)
     -- ,text "" -- Results in a split display
     ,text "Environment:"]
-     ++ map (\(ref,adt) -> pPrint ref <+> text "->" <+> pPrint (stringADT e adt)) (M.assocs e)
+     ++ map (\(ref,adt) -> pPrint ref <+> text "->" <+> pPrint (stringADT adt)) (M.assocs e)
+    where
+      stringADT adt = ADT (localName . declName $ adt) (declNumParameters adt) (((localName <$>) <$>) . conTreeNameMap localName <$> declCons adt)
 
-stringADT env adt = ADT (localName . declName $ adt) (declNumParameters adt) (((localName <$>) <$>) . conTreeNameMap localName <$> declCons adt)
-
+localName :: S.StringLike s => s -> Name
 localName = Name . S.toString
 
 instance (Pretty n,Pretty cn,Pretty r) => Pretty (ADT n cn r) where pPrint = prettyADT "" '≡'
 
+prettyADT :: (Pretty name, Pretty consName, Pretty ref) => String -> Char -> ADT name consName ref -> Doc
 prettyADT pre eq adt = text pre <+> pPrint (declName adt) <+> vars adt <+> maybe (text "") (\c -> char eq <+> pPrint c) (declCons adt)
 
+vars :: ADT name consName ref -> Doc
 vars adt = sep . map varP . map (\x -> x-1) $ [1 .. declNumParameters adt]
 
+-- |Convert a variable number (0,1,..) to a name ('a','b',..)
+varP :: Integral n => n -> Doc
 varP n = char $ chr ( (ord 'a') + (fromIntegral n))
 
 instance (Pretty name,Pretty ref) => Pretty (ConTree name ref) where
   pPrint (Con n (Left fs)) = pPrint n <+> sep (map (printPrettyType True) fs)
-  pPrint (Con n (Right nfs)) = pPrint n <+> "{" <> sep (punctuate "," (map (\(n,t) -> pPrint n <+> "::" <+> pPrint t) nfs)) <> "}"
+  pPrint (Con n (Right nfs)) = pPrint n <+> "{" <> sep (punctuate "," (map (\(nm,t) -> pPrint nm <+> "::" <+> pPrint t) nfs)) <> "}"
   -- pPrint (ConTree l r) = pPrint l <+> char '|' <+> pPrint r
-  pPrint tr@(ConTree l r) = let (h:t) = constructors tr
-                            in vcat (char ' ' <+> pPrint h : map (\c -> (char '|') <+> pPrint c) t)
+  pPrint conTree = let (h:t) = constructors conTree
+                   in vcat (char ' ' <+> pPrint h : map (\c -> (char '|') <+> pPrint c) t)
 
 instance Pretty n => Pretty (TypeRef n) where
    pPrint (TypVar v)   = varP v
    pPrint (TypRef s)   = pPrint s
 
 instance Pretty r => Pretty (Type r) where pPrint = printPrettyType False
-
-data PrettyType r = PrettyType Bool (TypeN r)
-printPrettyType n = pPrint . PrettyType n . typeN
-
-instance Pretty r => Pretty (PrettyType r) where
-  pPrint (PrettyType _ (TypeN f [])) = pPrint f
-  pPrint (PrettyType n (TypeN f as)) = maybeParens n (pPrint f <+> spacedP (map (PrettyType True) as))
 
 instance Pretty r => Pretty (TypeN r) where
   pPrint (TypeN f []) = pPrint f
@@ -67,6 +65,15 @@ instance Pretty Name where pPrint (Name n) = text n
 
 instance Pretty Doc where pPrint d = d
 
+data PrettyType r = PrettyType Bool (TypeN r)
+
+printPrettyType :: Pretty r => Bool -> Type r -> Doc
+printPrettyType n = pPrint . PrettyType n . typeN
+
+instance Pretty r => Pretty (PrettyType r) where
+  pPrint (PrettyType _ (TypeN f [])) = pPrint f
+  pPrint (PrettyType n (TypeN f as)) = maybeParens n (pPrint f <+> spacedP (map (PrettyType True) as))
+
 -- |Separate with a space
 spacedP :: Pretty a => [a] -> Doc
 spacedP = sep . map pPrint
@@ -75,6 +82,6 @@ spacedP = sep . map pPrint
 vspacedP :: Pretty a => [a] -> Doc
 vspacedP = sep . intersperse (text "") . map pPrint
 
--- |Intercalate with .
+-- |Intercalate with a dot
 dotted :: [String] -> Doc
 dotted = text . intercalate "."

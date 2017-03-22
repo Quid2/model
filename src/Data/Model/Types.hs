@@ -23,7 +23,6 @@ module Data.Model.Types(
 
   -- *Handy aliases
   ,HTypeEnv,HTypeModel,HADT,HType,HTypeRef
-  -- ,HEnv
 
   -- *Utilities
   ,solve,solveAll,unVar,getHRef
@@ -151,8 +150,10 @@ fieldsNames (Right nts) = map snd nts
 -- |Return the binary encoding and parameter types of a constructor
 -- The binary encoding is the sequence of Left (False) and Right (True) turns
 -- needed to reach the constructor from the constructor tree root.
-constructorInfo :: Eq consName => consName -> ADT name consName ref -> Maybe ([Bool], [Type ref])
-constructorInfo consName dt = declCons dt >>= ((first reverse <$>) . loc [])
+--constructorInfo :: Eq consName => consName -> ADT name consName ref -> Maybe ([Bool], [Type ref])
+--constructorInfo consName dt = declCons dt >>= ((first reverse <$>) . loc [])
+constructorInfo :: Eq consName => consName -> ConTree consName t -> Maybe ([Bool], [Type t])
+constructorInfo consName = (first reverse <$>) . loc []
   where
     -- |Locate constructor in tree
     loc bs (Con n ps) | n == consName = Just (bs,fieldsTypes ps)
@@ -276,3 +277,4 @@ solveAll env t = ((`solve` env)) <$> t
 -- |Solve a key in an environment, returns an error if the key is missing
 solve :: (Ord k, Show k) => k -> M.Map k a -> a
 solve k e = fromMaybe (error $ unwords ["Unknown reference to",show k]) (M.lookup k e)
+

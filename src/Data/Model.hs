@@ -1,5 +1,5 @@
 module Data.Model (
-  -- |Check the <https://github.com/tittoassini/model tutorial and github repo>
+  -- |Check the <https://github.com/tittoassini/model tutorial and github repo>.
   module X
   ) where
 
