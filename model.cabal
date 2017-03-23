@@ -17,8 +17,9 @@ Tested-With: GHC == 7.10.3,GHC == 8.0.2
 library
   hs-source-dirs:      src
   exposed-modules:     Data.Model,Data.Model.Class,Data.Model.Env,Data.Model.Instances,Data.Model.Pretty,Data.Model.Types,Data.Model.Util,Type.ANat,Type.Analyse
-  build-depends:       base >= 4.7 && < 5, containers >= 0.5.6.2, deepseq >= 1.4, pretty >= 1.1.2.0, transformers >= 0.4 ,ListLike >= 4.2.1
+  build-depends:       base >= 4.8 && < 5, containers >= 0.5.6.2, deepseq >= 1.4, pretty >= 1.1.2.0, transformers >= 0.4 ,ListLike >= 4.2.1
   default-language:    Haskell2010
+  other-extensions:    DataKinds, DefaultSignatures, DeriveAnyClass, DeriveFoldable, DeriveFunctor, DeriveGeneric, DeriveTraversable, FlexibleContexts, FlexibleInstances, NoMonomorphismRestriction, OverloadedStrings, PolyKinds, ScopedTypeVariables, TupleSections, TypeFamilies, TypeOperators, UndecidableInstances
   ghc-options:  -Wall -fno-warn-orphans
 
 test-suite model-test
