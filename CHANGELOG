@@ -1,0 +1,6 @@
+Significant and compatibility-breaking changes.
+
+Version 0.3:
+- Data.Model.Util:
+	- Removed 'dependencies'
+	- Added the (similar but not identical) function 'transitiveClosure'
