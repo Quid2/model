@@ -43,7 +43,69 @@ We pass the type using a Proxy.
 
 ```haskell
 typeModel (Proxy:: Proxy (Couple Direction Bool))
--> TypeModel {typeName = TypeApp (TypeApp (TypeCon (QualName {pkgName = "main", mdlName = "Main", locName = "Couple"})) (TypeCon (QualName {pkgName = "main", mdlName = "Main", locName = "Direction"}))) (TypeCon (QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"})), typeEnv = fromList [(QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"},ADT {declName = "Bool", declNumParameters = 0, declCons = Just (ConTree (Con {constrName = "False", constrFields = Left []}) (Con {constrName = "True", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Main", locName = "Couple"},ADT {declName = "Couple", declNumParameters = 2, declCons = Just (Con {constrName = "Couple", constrFields = Left [TypeCon (TypVar 0),TypeCon (TypVar 1)]})}),(QualName {pkgName = "main", mdlName = "Main", locName = "Direction"},ADT {declName = "Direction", declNumParameters = 0, declCons = Just (ConTree (ConTree (Con {constrName = "North", constrFields = Left []}) (Con {constrName = "South", constrFields = Left []})) (ConTree (Con {constrName = "Center", constrFields = Left []}) (ConTree (Con {constrName = "East", constrFields = Left []}) (Con {constrName = "West", constrFields = Left []}))))})]}
+-> TypeModel
+->   { typeName =
+->       TypeApp
+->         (TypeApp
+->            (TypeCon
+->               QualName
+->                 { pkgName = "main" , mdlName = "Main" , locName = "Couple" })
+->            (TypeCon
+->               QualName
+->                 { pkgName = "main" , mdlName = "Main" , locName = "Direction" }))
+->         (TypeCon
+->            QualName
+->              { pkgName = "ghc-prim"
+->              , mdlName = "GHC.Types"
+->              , locName = "Bool"
+->              })
+->   , typeEnv =
+->       fromList
+->         [ ( QualName
+->               { pkgName = "ghc-prim" , mdlName = "GHC.Types" , locName = "Bool" }
+->           , ADT
+->               { declName = "Bool"
+->               , declNumParameters = 0
+->               , declCons =
+->                   Just
+->                     (ConTree
+->                        Con { constrName = "False" , constrFields = Left [] }
+->                        Con { constrName = "True" , constrFields = Left [] })
+->               }
+->           )
+->         , ( QualName
+->               { pkgName = "main" , mdlName = "Main" , locName = "Couple" }
+->           , ADT
+->               { declName = "Couple"
+->               , declNumParameters = 2
+->               , declCons =
+->                   Just
+->                     Con
+->                       { constrName = "Couple"
+->                       , constrFields = Left [ TypeCon (TypVar 0) , TypeCon (TypVar 1) ]
+->                       }
+->               }
+->           )
+->         , ( QualName
+->               { pkgName = "main" , mdlName = "Main" , locName = "Direction" }
+->           , ADT
+->               { declName = "Direction"
+->               , declNumParameters = 0
+->               , declCons =
+->                   Just
+->                     (ConTree
+->                        (ConTree
+->                           Con { constrName = "North" , constrFields = Left [] }
+->                           Con { constrName = "South" , constrFields = Left [] })
+->                        (ConTree
+->                           Con { constrName = "Center" , constrFields = Left [] }
+->                           (ConTree
+->                              Con { constrName = "East" , constrFields = Left [] }
+->                              Con { constrName = "West" , constrFields = Left [] })))
+->               }
+->           )
+->         ]
+->   }
 ```
 
 
