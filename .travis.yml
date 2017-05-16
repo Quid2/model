@@ -59,6 +59,7 @@ install:
       stack --no-terminal setup
       ;;
     cabal)
+      export PATH="$HOME/.cabal/bin:$PATH";
       cabal --version
       travis_retry cabal update
       sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
@@ -72,7 +73,7 @@ script:
   case "$BUILD" in
     stack)
       ulimit -n 4096
-      stack --no-terminal $ARGS test > tst
+      stack --no-terminal $ARGS test 
       # > tst # --haddock --no-haddock-deps --ghc-options="-O0 -Wall -fno-warn-unused-do-bind -Werror"
       ;;
     cabal)
@@ -82,6 +83,6 @@ script:
       echo "[BUILD" && \
       cabal build && \
       echo "BUILD]" && \
-      travis_wait cabal test > tst
+      travis_wait cabal test
       ;;
   esac

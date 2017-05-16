@@ -272,9 +272,9 @@ instance S.StringLike Name where
 
 -- |Solve all references in a data structure, using the given environment
 solveAll :: (Functor f, Show k, Ord k) => M.Map k b -> f k -> f b
-solveAll env t = ((`solve` env)) <$> t
+solveAll env t = (`solve` env) <$> t
 
 -- |Solve a key in an environment, returns an error if the key is missing
 solve :: (Ord k, Show k) => k -> M.Map k a -> a
-solve k e = fromMaybe (error $ unwords ["Unknown reference to",show k]) (M.lookup k e)
+solve k e = fromMaybe (error $ unwords ["solve:Unknown reference to",show k]) (M.lookup k e)
 

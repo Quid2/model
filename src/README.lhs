@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/tittoassini/model.svg?branch=master)](https://travis-ci.org/tittoassini/model)
+[![Build Status](https://travis-ci.org/tittoassini/model.svg?branch=master)](https://travis-ci.org/tittoassini/model) [![Hackage version](https://img.shields.io/hackage/v/model.svg)](http://hackage.haskell.org/package/model)
 
 With `model` you can easily derive models of Haskell data types.
 
@@ -45,17 +45,6 @@ Data types with symbolic names are also supported:
  ### Installation
 
 Get the latest stable version from [hackage](https://hackage.haskell.org/package/model).
-
-<!--
-It is not yet on [hackage](https://hackage.haskell.org/) but you can use it in your [stack](https://docs.haskellstack.org/en/stable/README/) projects by adding in the `stack.yaml` file, under the `packages` section:
-
-````
-- location:
-   git: https://github.com/tittoassini/model
-   commit: b05a56a993213271e3b13d28a5e8bb90c9d8576f
-  extra-dep: true
-````
--->
 
  ### Compatibility
 

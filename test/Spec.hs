@@ -4,24 +4,22 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
-{-# LANGUAGE StandaloneDeriving        #-}
---import           Data.Bifunctor
+
+module Main where
+
 import qualified Data.Either
 import           Data.List
-import qualified Data.Map              as M
+import qualified Data.Map         as M
 import           Data.Model
---import           Data.Traversable
---import           Data.Typeable
 import           Data.Word
 import qualified GHC.Base
 import qualified GHC.Types
 import           Test.Data
-import           Test.Data.Model
+import           Test.Data.Model  ()
 import qualified Test.Data2
 import qualified Test.Data3
 import           Test.Tasty
 import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck as QC
 
 -- main = makeTests
 main = mainTest
@@ -29,7 +27,7 @@ main = mainTest
 mainTest = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [properties,  unitTests]
+tests = testGroup "Tests" [properties, transformTests, unitTests]
 
 properties = testGroup "Properties" []
 
@@ -71,6 +69,20 @@ tst p e = let tm = typeModel p
               s = prettyShow . simpleType $ typeName tm
           in testCase (unwords ["typeModel of",s]) $ simpleHTypeEnv tm @?= e
 
+transformTests = testGroup "Transform Tests" [
+  testTrc [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])] "b" ["c","a","d","b"]
+  ,testTrc [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])] "c" ["c"]
+  ,testMutual ([("a",["b","c"]),("b",["a","c"]),("c",[])]) [["c"],["b","a"]]
+  ]
+  where
+    testTrc adjs start etrc =
+      let Right trc = transitiveClosure Just (M.fromList adjs) start
+      in testCase (unwords ["transitiveClosure",show adjs,start]) $ trc @?= etrc
+
+    testMutual adjs emut =
+      let mut = mutualGroups Just (M.fromList adjs)
+      in testCase (unwords ["mutualGroups",show adjs]) $ mut @?= emut
+
 ----- Pretty printing
 -- Simplify type for test
 simpleHTypeEnv tm = (simpleType $ typeName tm
@@ -80,8 +92,8 @@ simpleType = (TypRef . asName <$>)
 simpleADT (qname,adt) = ADT (qualName qname) (declNumParameters adt) ((mdlRef <$>) <$> declCons adt)
 
 mdlRef :: HTypeRef -> TypeRef Name
-mdlRef (TypVar v)   = TypVar v
-mdlRef (TypRef n)   = TypRef (asName n)
+mdlRef (TypVar v) = TypVar v
+mdlRef (TypRef n) = TypRef (asName n)
 
 asName = Name . qualName
 

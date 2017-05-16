@@ -102,7 +102,8 @@ instance GModel (M1 D d V1) where
     gtypeN = notThere
 
 -- |Datatypes with single constructor only
-instance (GModel a, Datatype d, Constructor c) => GModel (M1 D d (M1 C c a)) where
+--instance (GModel a, Datatype d, Constructor c) => GModel (M1 D d (M1 C c a)) where
+instance (GModel a, Constructor c) => GModel (M1 D d (M1 C c a)) where
     gcons x = Just <$> gcontree (unM1 x)
     gcontree = notThere
     gtype = notThere
