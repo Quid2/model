@@ -1,5 +1,5 @@
 
-[![Build Status](https://travis-ci.org/tittoassini/model.svg?branch=master)](https://travis-ci.org/tittoassini/model) [![Hackage version](https://img.shields.io/hackage/v/model.svg)](http://hackage.haskell.org/package/model)
+[![Build Status](https://travis-ci.org/Quid2/model.svg?branch=master)](https://travis-ci.org/Quid2/model) [![Hackage version](https://img.shields.io/hackage/v/model.svg)](http://hackage.haskell.org/package/model)
 
 With `model` you can easily derive models of Haskell data types.
 
@@ -175,3 +175,4 @@ Tested with [ghc](https://www.haskell.org/ghc/) 7.10.3 and 8.0.2.
   `instance (Model a,Model b) => Model (Couple a b)`
 
 * Works incorrectly with data types with more than 9 type variables.
+
