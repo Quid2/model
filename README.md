@@ -1,8 +1,8 @@
 
 [![Build Status](https://travis-ci.org/Quid2/model.svg?branch=master)](https://travis-ci.org/Quid2/model)
 [![Hackage version](https://img.shields.io/hackage/v/model.svg)](http://hackage.haskell.org/package/model)
-[![Stackage LTS](http://stackage.org/package/model/badge/lts)](http://stackage.org/lts/package/model)
 [![Stackage Nightly](http://stackage.org/package/model/badge/nightly)](http://stackage.org/nightly/package/model)
+[![Stackage LTS](http://stackage.org/package/model/badge/lts)](http://stackage.org/lts/package/model)
 
 With `model` you can easily derive models of Haskell data types.
 

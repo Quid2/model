@@ -1,5 +1,7 @@
 Significant and compatibility-breaking changes.
 
+Version 0.3.2:
+
 Version 0.3:
 - Data.Model.Util:
 	- Removed 'dependencies'

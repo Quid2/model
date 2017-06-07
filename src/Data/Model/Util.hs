@@ -10,7 +10,7 @@ import           Data.Maybe
 -- |Return the groups of entities that are mutually dependent
 --
 -- >>> mutualGroups Just (M.fromList [("a",["b","c"]),("b",["a","c"]),("c",[])])
--- [["c"],["a","b"]]
+-- [["c"],["b","a"]]
 mutualGroups :: (Ord r, Show r, Foldable t) => (a -> Maybe r) -> M.Map r (t a) -> [[r]]
 mutualGroups getRef env = recs [] (M.keys env)
   where
@@ -29,6 +29,9 @@ mutualGroups getRef env = recs [] (M.keys env)
 --
 -- >>> transitiveClosure Just (M.fromList [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])]) "b"
 -- Right ["c","a","d","b"]
+-- 
+-- >>> transitiveClosure Just (M.fromList [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])]) "c"
+-- Right ["c"]
 transitiveClosure :: (Ord r, Show r, Foldable t) => (a -> Maybe r) -> M.Map r (t a) -> r -> Either Errors [r]
 transitiveClosure getRef env = execRec . deps
     where

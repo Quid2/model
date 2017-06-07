@@ -17,14 +17,14 @@ BUG: Silently fails for types with more than 9 parameters (should be defined rec
 
 Examples:
 
->>> undefined :: Ana (Maybe Char)
+>> undefined :: Ana (Maybe Char)
 undefined :: Ana (Maybe Char) :: App (Typ (Maybe A0)) (Typ Char)
 
->>> undefined :: Ana (Either Int Char)
+>> undefined :: Ana (Either Int Char)
 undefined :: Ana (Either Int Char)
   :: App (App (Typ (Either A0 A1)) (Typ Int)) (Typ Char)
 
->>> undefined :: Ana ([(Bool,())])
+>> undefined :: Ana ([(Bool,())])
 undefined :: Ana ([(Bool,())])
   :: App (Typ [A0]) (App (App (Typ (A0, A1)) (Typ Bool)) (Typ ()))
 -}
