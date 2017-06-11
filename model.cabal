@@ -57,6 +57,6 @@ test-suite model-doctest
   type:               exitcode-stdio-1.0
   ghc-options:        -threaded
   main-is:            DocSpec.hs
-  build-depends:      base >4 && <5, doctest>=0.11.2, filemanip>=0.3.6.3
+  build-depends:      base >4 && <5, doctest>=0.11.1, filemanip>=0.3.6.3
                       -- , doctest-discover >= 0.1.0.7
   HS-Source-Dirs:     test
