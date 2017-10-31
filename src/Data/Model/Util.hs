@@ -1,38 +1,74 @@
-module Data.Model.Util (mutualGroups, transitiveClosure, Errors) where
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE TypeSynonymInstances      #-}
+module Data.Model.Util
+  ( -- * Dependencies
+    properMutualGroups
+  , mutualGroups
+  , transitiveClosure
+  -- * Error utilities
+  -- , Errors
+  , toErrors
+  -- * Convertible utilities
+  , Convertible(..)
+  , convert
+  , ConvertResult
+  , ConvertError(..)
+  , errorToConvertResult
+  , errorsToConvertResult
+  , convertResultToError
+  , convertResultToErrors
+  -- * Formatting utilities
+  , dotted
+  ) where
 
 import           Control.Monad
 import           Control.Monad.Trans.State
-import           Data.Foldable             (toList)
+import           Data.Bifunctor
+import           Data.Convertible
+import           Data.Foldable                  (toList)
 import           Data.List
-import qualified Data.Map                  as M
+import qualified Data.Map.Lazy                  as M
 import           Data.Maybe
+import           Data.Typeable
+import           Text.PrettyPrint.HughesPJClass (Pretty, prettyShow)
 
--- |Return the groups of entities that are mutually dependent
---
--- >>> mutualGroups Just (M.fromList [("a",["b","c"]),("b",["a","c"]),("c",[])])
--- [["c"],["b","a"]]
-mutualGroups :: (Ord r, Show r, Foldable t) => (a -> Maybe r) -> M.Map r (t a) -> [[r]]
+{-| Return the groups of mutually dependent entities, with more than one component
+
+>>> properMutualGroups Just (M.fromList [("a",["b","c"]),("b",["a","c"]),("c",[])])
+Right [["b","a"]]
+
+-}
+properMutualGroups :: (Ord r, Pretty r, Foldable t) => (a -> Maybe r) -> M.Map r (t a) -> Either [String] [[r]]
+properMutualGroups getRef env = filter ((> 1) . length) <$> mutualGroups getRef env
+
+{-| Return the groups of mutually dependent entities
+
+>>> mutualGroups Just (M.fromList [("a",["b","c"]),("b",["a","c"]),("c",[])])
+Right [["c"],["b","a"]]
+
+-}
+mutualGroups :: (Ord r, Pretty r, Foldable t) => (a -> Maybe r) -> M.Map r (t a) -> Either [String] [[r]]
 mutualGroups getRef env = recs [] (M.keys env)
   where
-    deps n = unsafely (transitiveClosure getRef env n)
-    recs gs [] = gs
-    recs gs (n:ns) =
-      let mutual = filter (\o -> n `elem` deps o) (deps n)
-      in recs (mutual:gs) (ns \\ mutual)
+    deps = transitiveClosure getRef env
+    recs gs [] = return gs
+    recs gs (n:ns) = do
+      ds <- deps n
+      mutual <- filterM (((n `elem`) <$>) . deps) ds
+      recs (mutual:gs) (ns \\ mutual)
 
--- >>>mutualDeps (M.fromList [("a",["b","c"]),("b",["a","c"]),("c",[])])
--- fromList [("a",["b"]),("b",["a"]),("c",[])]
--- mutualDeps :: (Ord a, Show a) => M.Map a [a] -> M.Map a [a]
--- mutualDeps deps = M.mapWithKey (\n ds -> filter (\o -> n `elem` (solve o deps)) ds) deps
+{-| Return the transitive closure of an element in a graph of dependencies specified as an adjacency list
 
--- |Return the transitive closure of an element in a graph of dependencies specified as an adjacency list
---
--- >>> transitiveClosure Just (M.fromList [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])]) "b"
--- Right ["c","a","d","b"]
--- 
--- >>> transitiveClosure Just (M.fromList [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])]) "c"
--- Right ["c"]
-transitiveClosure :: (Ord r, Show r, Foldable t) => (a -> Maybe r) -> M.Map r (t a) -> r -> Either Errors [r]
+>>> transitiveClosure Just (M.fromList [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])]) "b"
+Right ["c","a","d","b"]
+
+>>> transitiveClosure Just (M.fromList [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])]) "c"
+Right ["c"]
+
+-}
+transitiveClosure :: (Foldable t, Pretty r, Ord r) => (a -> Maybe r) -> M.Map r (t a) -> r -> Either [String] [r]
 transitiveClosure getRef env = execRec . deps
     where
       deps n = do
@@ -40,20 +76,62 @@ transitiveClosure getRef env = execRec . deps
          unless present $ do
            modify (\st -> st {seen=n:seen st})
            case M.lookup n env of
-             Nothing -> modify (\st -> st {errors=unwords ["transitiveClosure:Unknown reference to",show n]:errors st})
+             Nothing -> modify (\st -> st {errors=unwords ["transitiveClosure:Unknown reference to",prettyShow n]:errors st})
              Just v  -> mapM_ deps (mapMaybe getRef . toList $ v)
-
--- |Extract a Right value from an Either, throw an error if it is Left
-unsafely :: Either Errors c -> c
-unsafely = either (error.unlines) id
-
--- execRec :: State (RecState r) a -> Either [String] [r]
--- execRec op = (\st -> if null (errors st) then Right (tail . reverse . seen $ st) else Left (errors st)) $ execState op (RecState [] [])
 
 execRec :: State (RecState r) a -> Either [String] [r]
 execRec op = (\st -> if null (errors st) then Right (seen st) else Left (errors st)) $ execState op (RecState [] [])
 
-data RecState r = RecState {seen::[r],errors::Errors} deriving Show
+data RecState r = RecState {seen::[r],errors::[String]} deriving Show
 
 -- |A list of error messages
-type Errors = [String]
+-- type Errors = [String]
+
+-- |Either an error or a valid value
+type EitherError a = Either String a
+
+-- |Either errors or a valid value
+type EitherErrors a = Either [String] a
+
+toErrors :: EitherError a -> EitherErrors a
+toErrors = first (:[])
+
+-- noErrors :: Errors -> Bool
+-- noErrors = null
+
+errorToConvertResult
+  :: (Typeable b, Typeable a, Show a)
+  => (a -> EitherError b) -> a -> ConvertResult b
+errorToConvertResult conv a = either (\err -> convError err a) Right $ conv a
+
+errorsToConvertResult
+  :: (Typeable b, Typeable a, Show a)
+  => (a -> EitherErrors b) -> a -> ConvertResult b
+errorsToConvertResult conv a = either (\errs -> convError (unwords errs) a) Right $ conv a
+
+convertResultToError :: ConvertResult a -> EitherError a
+convertResultToError = first prettyConvertError
+
+convertResultToErrors :: ConvertResult a -> EitherErrors a
+convertResultToErrors = toErrors . convertResultToError
+
+instance Convertible String String where safeConvert = Right . id
+
+{-| Intercalate a dot between the non empty elements of a list of strings.
+
+>>> dotted []
+""
+
+>>> dotted ["","bc","de"]
+"bc.de"
+
+>>> dotted ["bc","","de"]
+"bc.de"
+-}
+dotted :: [String] -> String
+-- dotted = intercalate "." . filter (not . null)
+dotted [] = ""
+dotted [s] = s
+dotted (h:t) = post h ++ dotted t
+    where post s | null s = ""
+                 | otherwise = s ++ "."

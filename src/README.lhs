@@ -1,3 +1,4 @@
+[![Join the chat at https://gitter.im/Quid2/Lobby](https://badges.gitter.im/Quid2.svg)](https://gitter.im/Quid2/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/Quid2/model.svg?branch=master)](https://travis-ci.org/Quid2/model)
 [![Hackage version](https://img.shields.io/hackage/v/model.svg)](http://hackage.haskell.org/package/model)
 [![Stackage Nightly](http://stackage.org/package/model/badge/nightly)](http://stackage.org/nightly/package/model)
@@ -51,7 +52,7 @@ Get the latest stable version from [hackage](https://hackage.haskell.org/package
 
  ### Compatibility
 
-Tested with [ghc](https://www.haskell.org/ghc/) 7.10.3 and 8.0.2.
+Tested with [ghc](https://www.haskell.org/ghc/) 7.10.3, 8.0.1, 8.0.2 and 8.2.1.
 
  ### Known Bugs and Infelicities
 
@@ -74,5 +75,3 @@ Tested with [ghc](https://www.haskell.org/ghc/) 7.10.3 and 8.0.2.
   `instance (Model a,Model b) => Model (Couple a b)`
 
 * Works incorrectly with data types with more than 9 type variables.
-
-

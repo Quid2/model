@@ -1,23 +1,29 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE MultiParamTypeClasses ,DeriveGeneric ,DeriveDataTypeable ,ScopedTypeVariables ,GADTs ,NoMonomorphismRestriction ,DeriveGeneric ,DefaultSignatures ,TemplateHaskell ,TypeFamilies ,FlexibleContexts ,FlexibleInstances ,EmptyDataDecls #-}
+{-# LANGUAGE ConstraintKinds           #-}
+{-# LANGUAGE DefaultSignatures         #-}
+{-# LANGUAGE DeriveDataTypeable        #-}
+{-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE DeriveTraversable         #-}
+{-# LANGUAGE EmptyDataDecls            #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE TemplateHaskell           #-}
+{-# LANGUAGE TypeFamilies              #-}
 {-
  A collection of data types used for testing.
 -}
+
 module Test.Data where
 
-import Control.Exception
-import           Data.Char
+import           Data.Data
 import           Data.Int
 import           Data.Word
-
-import           Data.Typeable
-import           Data.Data
 import           GHC.Generics
-import           Data.Data
-import qualified Test.Data2 as D2
-import Data.Foldable
-import GHC.Exts hiding (toList)
+import qualified Test.Data2            as D2
+import           Test.Tasty.QuickCheck
 
 data Void deriving Generic
 
@@ -203,3 +209,76 @@ data Engine = Engine {
   ,fuel::String -- constant Petrol
   } deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
+-- To generate Arbitrary instances while avoiding a direct dependency on 'derive' (that is not supported by Eta), run in the project directory: derive -a test/Test/Data.hs
+{-!
+deriving instance Arbitrary N
+deriving instance Arbitrary Tree
+deriving instance Arbitrary List
+deriving instance Arbitrary Unit
+deriving instance Arbitrary Un
+deriving instance Arbitrary A
+deriving instance Arbitrary B
+!-}
+
+-- GENERATED START
+
+instance () => Arbitrary N where
+        arbitrary
+          = do x <- choose (0 :: Int, 4)
+               case x of
+                   0 -> return One
+                   1 -> return Two
+                   2 -> return Three
+                   3 -> return Four
+                   4 -> return Five
+                   _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
+
+instance (Arbitrary a) => Arbitrary (Tree a) where
+        arbitrary
+          = do x <- choose (0 :: Int, 1)
+               case x of
+                   0 -> do x1 <- arbitrary
+                           x2 <- arbitrary
+                           return (Node x1 x2)
+                   1 -> do x1 <- arbitrary
+                           return (Leaf x1)
+                   _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
+
+instance (Arbitrary a) => Arbitrary (List a) where
+        arbitrary
+          = do x <- choose (0 :: Int, 1)
+               case x of
+                   0 -> do x1 <- arbitrary
+                           x2 <- arbitrary
+                           return (C x1 x2)
+                   1 -> return N
+                   _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
+
+instance () => Arbitrary Unit where
+        arbitrary = return Unit
+
+instance () => Arbitrary Un where
+        arbitrary
+          = do x1 <- arbitrary
+               return (Un x1)
+
+instance () => Arbitrary A where
+        arbitrary
+          = do x <- choose (0 :: Int, 1)
+               case x of
+                   0 -> do x1 <- arbitrary
+                           return (A x1)
+                   1 -> do x1 <- arbitrary
+                           return (AA x1)
+                   _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
+
+instance () => Arbitrary B where
+        arbitrary
+          = do x <- choose (0 :: Int, 1)
+               case x of
+                   0 -> do x1 <- arbitrary
+                           return (B x1)
+                   1 -> do x1 <- arbitrary
+                           return (BB x1)
+                   _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
+-- GENERATED STOP

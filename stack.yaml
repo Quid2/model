@@ -1,7 +1,6 @@
-# resolver: lts-6.31
-resolver: lts-7.21
-#resolver: lts-8.13
-
+# resolver: lts-6.35
+#resolver: lts-7.24
+resolver: lts-9.11
+#resolver: nightly-2017-10-30
 packages:
 - '.'
-

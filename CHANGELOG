@@ -1,8 +1,16 @@
 Significant and compatibility-breaking changes.
 
-Version 0.3.2:
+Version 0.4:
+	- Data.Model.Types:
+		- Modified type of 'constructors' and 'constructorInfo'
+		- Removed instances of StringLike (replaced with Convertible)
+	        - Modified behaviour of conversion from String to QualName
+	- Data.Model.Util:
+	        - modified type of 'mutualGroups' and 'transitiveClosure'
 
 Version 0.3:
-- Data.Model.Util:
+   - Data.Model.Util:
 	- Removed 'dependencies'
 	- Added the (similar but not identical) function 'transitiveClosure'
+
+

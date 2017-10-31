@@ -1,25 +1,25 @@
 -- |A model for simple algebraic data types.
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveFoldable    #-}
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveFoldable        #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DeriveTraversable     #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Model.Types(
   -- *Model
   TypeModel(..),TypeEnv,typeADTs
   ,ADT(..)
-  ,ConTree(..)
-  ,Type(..),TypeN(..),TypeRef(..)
+  ,ConTree(..),Fields
+  ,Type(..),TypeN(..),nestedTypeNs,TypeRef(..)
 
   -- *Names
   ,Name(..),QualName(..),qualName
 
   -- *Model Utilities
   ,adtNamesMap
-  --,typeADTs
   ,typeN,typeA
-  ,constructors,constructorInfo,conTreeNameMap,conTreeTypeMap,conTreeTypeList,conTreeTypeFoldMap,fieldsTypes,fieldsNames
+  ,contree,constructors,constructorInfo,conTreeNameMap,conTreeNameFold,conTreeTypeMap,conTreeTypeList,conTreeTypeFoldMap,fieldsTypes,fieldsNames
 
   -- *Handy aliases
   ,HTypeEnv,HTypeModel,HADT,HType,HTypeRef
@@ -34,13 +34,12 @@ module Data.Model.Types(
 
 import           Control.Applicative
 import           Control.DeepSeq
-import           Data.Bifunctor       (first, second)
-import           Data.List
-import qualified Data.ListLike.String as S
-import qualified Data.Map             as M
+import           Data.Bifunctor      (first, second)
+import qualified Data.Map            as M
 import           Data.Maybe
+import           Data.Model.Util
 import           Data.Proxy
-import           Data.Word            (Word8)
+import           Data.Word           (Word8)
 import           GHC.Generics
 
 -- |Haskell Environment
@@ -105,9 +104,7 @@ data ConTree name ref =
 
   -- | Constructor fields, they can be either unnamed (Left case) or named (Right case)
   -- If they are named, they must all be named
-  ,constrFields :: Either
-                   [Type ref]
-                   [(name,Type ref)]
+  ,constrFields :: Fields name ref
   }
 
   {- |
@@ -132,10 +129,22 @@ data ConTree name ref =
 
   deriving (Eq, Ord, Show, NFData, Generic)
 
+type Fields name ref = Either
+                   [Type ref]
+                   [(name,Type ref)]
+
 -- |Return the list of constructors in definition order
-constructors :: ConTree t t1 -> [ConTree t t1]
-constructors c@(Con _ _)   = [c]
+constructors :: ConTree name ref -> [(name, Fields name ref)]
+constructors (Con n f)     = [(n,f)]
 constructors (ConTree l r) = constructors l ++ constructors r
+
+-- |Convert a (possibly empty) list of constructors in (maybe) a ConTree
+contree :: [(name, Fields name ref)] -> Maybe (ConTree name ref)
+contree [] = Nothing
+contree ccs = Just . ct $ ccs
+  where
+    ct [(name,fields)] = Con name fields
+    ct cs = let (ls,rs) = splitAt (length cs `div` 2) cs in ConTree (ct ls) (ct rs)
 
 -- |Return just the field types
 fieldsTypes :: Either [b] [(a, b)] -> [b]
@@ -148,10 +157,9 @@ fieldsNames (Left _)    = []
 fieldsNames (Right nts) = map snd nts
 
 -- |Return the binary encoding and parameter types of a constructor
+--
 -- The binary encoding is the sequence of Left (False) and Right (True) turns
--- needed to reach the constructor from the constructor tree root.
---constructorInfo :: Eq consName => consName -> ADT name consName ref -> Maybe ([Bool], [Type ref])
---constructorInfo consName dt = declCons dt >>= ((first reverse <$>) . loc [])
+-- needed to reach the constructor from the constructor tree root
 constructorInfo :: Eq consName => consName -> ConTree consName t -> Maybe ([Bool], [Type t])
 constructorInfo consName = (first reverse <$>) . loc []
   where
@@ -177,7 +185,6 @@ instance Traversable (ConTree name) where
   -- TODO: simplify this
   traverse f (Con n (Right nts)) = Con n . Right . zip (map fst nts) <$> sequenceA (map (traverse f . snd) nts)
 
--- CHECK: easier to use lens?
 -- |Map on the constructor types (used for example when eliminating variables)
 conTreeTypeMap :: (Type t -> Type ref) -> ConTree name t -> ConTree name ref
 conTreeTypeMap f (ConTree l r) = ConTree (conTreeTypeMap f l) (conTreeTypeMap f r)
@@ -189,6 +196,11 @@ conTreeNameMap :: (name -> name2) -> ConTree name t -> ConTree name2 t
 conTreeNameMap f (ConTree l r) = ConTree (conTreeNameMap f l) (conTreeNameMap f r)
 conTreeNameMap f (Con n (Left ts)) = Con (f n) (Left ts)
 conTreeNameMap f (Con n (Right nts)) = Con (f n) (Right $ map (first f) nts)
+
+-- |Fold over a constructor tree names
+conTreeNameFold :: Monoid a => (name -> a) -> ConTree name t -> a
+conTreeNameFold f (ConTree l r) = conTreeNameFold f l `mappend` conTreeNameFold f r
+conTreeNameFold f (Con n _) = f n
 
 -- |Extract list of types in a constructor tree
 conTreeTypeList :: ConTree name t -> [Type t]
@@ -215,7 +227,7 @@ data Type ref = TypeCon ref                    -- ^Type constructor ("Bool","May
 
 -- |Another representation of a type, sometime easier to work with
 data TypeN r = TypeN r [TypeN r]
-             deriving (Eq,Ord,Read,Show,NFData ,Generic,Functor,Foldable,Traversable)
+              deriving (Eq,Ord,Read,Show,NFData ,Generic,Functor,Foldable,Traversable)
 
 -- |Convert from Type to TypeN
 typeN :: Type r -> TypeN r
@@ -226,6 +238,18 @@ typeN (TypeCon r) = TypeN r []
 -- |Convert from TypeN to Type
 typeA :: TypeN ref -> Type ref
 typeA (TypeN tf ts) = foldl TypeApp (TypeCon tf) (map typeA ts)
+
+-- |Returns the list of nested TypeNs
+--
+-- >>> nestedTypeNs $ TypeN "F" [TypeN "G" [],TypeN "Z" []]
+-- [TypeN "F" [TypeN "G" [],TypeN "Z" []],TypeN "G" [],TypeN "Z" []]
+--
+-- >>> nestedTypeNs $ TypeN "F" [TypeN "G" [TypeN "H" [TypeN "L" []]],TypeN "Z" []]
+-- [TypeN "F" [TypeN "G" [TypeN "H" [TypeN "L" []]],TypeN "Z" []],TypeN "G" [TypeN "H" [TypeN "L" []]],TypeN "H" [TypeN "L" []],TypeN "L" [],TypeN "Z" []]
+--
+nestedTypeNs :: TypeN t -> [TypeN t]
+nestedTypeNs t@(TypeN _ []) = [t]
+nestedTypeNs t@(TypeN _ ps) = t : concatMap nestedTypeNs ps
 
 -- |A reference to a type
 data TypeRef name = TypVar Word8  -- ^Type variable
@@ -248,33 +272,36 @@ data QualName = QualName {pkgName,mdlName,locName :: String}
 
 -- |Return the qualified name, minus the package name.
 qualName :: QualName -> String
-qualName n = concat [mdlName n,".",locName n]
+qualName n = convert $ n {pkgName=""}
 
-instance S.StringLike QualName where
-  toString n = intercalate "." [pkgName n,mdlName n,locName n]
-  fromString n = let (p,r) = span (/= '.') n
-                     (m,r2) = span (/= '.') $ tail r
-                     l = tail r2
-                 in QualName p m l
+instance Convertible String QualName where safeConvert = errorToConvertResult parseQualName
+instance Convertible QualName String  where safeConvert n = Right $ dotted [pkgName n,mdlName n,locName n]
 
-instance S.StringLike String where
-  toString = id
-  fromString = id
+-- |Parse the string as a QualName, if possible
+--
+-- >>> parseQualName "ab.cd.ef.gh"
+-- Right (QualName {pkgName = "ab", mdlName = "cd.ef", locName = "gh"})
+parseQualName :: String -> Either String QualName
+parseQualName "" = Left "Empty string"
+parseQualName n = Right $
+  let  (p,r) = span (/= '.') n
+  in if null r
+     then QualName "" "" p
+     else let (l,r2) = span (/= '.') $ reverse $ tail r
+          in if null r2
+             then QualName "" p (reverse l)
+             else let m = reverse $ tail r2
+                  in QualName p m (reverse l)
 
 -- |Simple name
 data Name = Name String deriving (Eq, Ord, Show, NFData, Generic)
 
-instance S.StringLike Name where
-  toString (Name n)= n
-  fromString = Name
-
 -- Utilities
-
 -- |Solve all references in a data structure, using the given environment
 solveAll :: (Functor f, Show k, Ord k) => M.Map k b -> f k -> f b
 solveAll env t = (`solve` env) <$> t
 
 -- |Solve a key in an environment, returns an error if the key is missing
 solve :: (Ord k, Show k) => k -> M.Map k a -> a
-solve k e = fromMaybe (error $ unwords ["solve:Unknown reference to",show k]) (M.lookup k e)
+solve k e = fromMaybe (error $ unwords ["solve:Unknown reference to",show k,"in",show $ M.keys e]) (M.lookup k e)
 
