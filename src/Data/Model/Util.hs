@@ -3,8 +3,8 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
 module Data.Model.Util
-    -- * Dependencies
-  ( properMutualGroups
+  ( -- * Dependencies
+    properMutualGroups
   , mutualGroups
   , transitiveClosure
   -- * Error utilities
