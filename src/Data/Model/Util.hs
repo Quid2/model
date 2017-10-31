@@ -3,13 +3,14 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
 module Data.Model.Util
-  ( -- * Dependencies
-    properMutualGroups
+    -- * Dependencies
+  ( properMutualGroups
   , mutualGroups
   , transitiveClosure
   -- * Error utilities
-  -- , Errors
+  , Errors
   , toErrors
+  , noErrors
   -- * Convertible utilities
   , Convertible(..)
   , convert
@@ -82,37 +83,39 @@ transitiveClosure getRef env = execRec . deps
 execRec :: State (RecState r) a -> Either [String] [r]
 execRec op = (\st -> if null (errors st) then Right (seen st) else Left (errors st)) $ execState op (RecState [] [])
 
-data RecState r = RecState {seen::[r],errors::[String]} deriving Show
+data RecState r = RecState {seen::[r],errors::Errors} deriving Show
 
 -- |A list of error messages
--- type Errors = [String]
+type Errors = [Error]
+
+type Error = String
 
 -- |Either an error or a valid value
-type EitherError a = Either String a
+-- type EitherError a = Either String a
 
 -- |Either errors or a valid value
-type EitherErrors a = Either [String] a
+-- type EitherErrors a = Either [String] a
 
-toErrors :: EitherError a -> EitherErrors a
+toErrors :: Either Error a -> Either Errors a
 toErrors = first (:[])
 
--- noErrors :: Errors -> Bool
--- noErrors = null
+noErrors :: Errors -> Bool
+noErrors = null
 
 errorToConvertResult
   :: (Typeable b, Typeable a, Show a)
-  => (a -> EitherError b) -> a -> ConvertResult b
+  => (a -> Either Error b) -> a -> ConvertResult b
 errorToConvertResult conv a = either (\err -> convError err a) Right $ conv a
 
 errorsToConvertResult
   :: (Typeable b, Typeable a, Show a)
-  => (a -> EitherErrors b) -> a -> ConvertResult b
+  => (a -> Either Errors b) -> a -> ConvertResult b
 errorsToConvertResult conv a = either (\errs -> convError (unwords errs) a) Right $ conv a
 
-convertResultToError :: ConvertResult a -> EitherError a
+convertResultToError :: ConvertResult a -> Either Error a
 convertResultToError = first prettyConvertError
 
-convertResultToErrors :: ConvertResult a -> EitherErrors a
+convertResultToErrors :: ConvertResult a -> Either Errors a
 convertResultToErrors = toErrors . convertResultToError
 
 instance Convertible String String where safeConvert = Right . id
