@@ -51,7 +51,7 @@ transformTests = testGroup "Transform Tests" [
 
 namesTests :: TestTree
 namesTests = testGroup "QualName Tests" [
-  tstErr "" "Empty string"
+  tstErr "" "Empty qualified name"
   ,tst "ab" $ QualName "" "" "ab"
   --,tstErr "a.b.c.d" "Too many components in qualified name 'a.b.c.d'"
   ,tst "ab.cd" $ QualName "" "ab" "cd"

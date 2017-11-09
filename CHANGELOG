@@ -1,5 +1,11 @@
 Significant and compatibility-breaking changes.
 
+Version 0.4.2:
+	- model.cabal: added upper bounds for dependencies
+	- Data.Model.Util: added error handling utilities
+
+Version 0.4.1: Cosmetic changes to documentation
+
 Version 0.4:
 	- Data.Model.Types:
 		- Modified type of 'constructors' and 'constructorInfo'
@@ -7,10 +13,10 @@ Version 0.4:
 	        - Modified behaviour of conversion from String to QualName
 	- Data.Model.Util:
 	        - modified type of 'mutualGroups' and 'transitiveClosure'
+		- added some error handling utilities
 
 Version 0.3:
    - Data.Model.Util:
-	- Removed 'dependencies'
-	- Added the (similar but not identical) function 'transitiveClosure'
+	- Removed 'dependencies', added (similar but not identical) 'transitiveClosure'
 
 

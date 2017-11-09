@@ -34,12 +34,13 @@ module Data.Model.Types(
 
 import           Control.Applicative
 import           Control.DeepSeq
-import           Data.Bifunctor      (first, second)
-import qualified Data.Map            as M
+import           Data.Bifunctor         (first, second)
+import           Data.Either.Validation
+import qualified Data.Map               as M
 import           Data.Maybe
 import           Data.Model.Util
 import           Data.Proxy
-import           Data.Word           (Word8)
+import           Data.Word              (Word8)
 import           GHC.Generics
 
 -- |Haskell Environment
@@ -270,28 +271,64 @@ getHRef (TypVar _) = Nothing
 data QualName = QualName {pkgName,mdlName,locName :: String}
               deriving (Eq, Ord, Show, NFData, Generic)
 
--- |Return the qualified name, minus the package name.
+{-|Return the qualified name, minus the package name.
+>>> qualName (QualName {pkgName = "ab", mdlName = "cd.ef", locName = "gh"})
+"cd.ef.gh"
+
+-}
 qualName :: QualName -> String
 qualName n = convert $ n {pkgName=""}
 
-instance Convertible String QualName where safeConvert = errorToConvertResult parseQualName
+instance Convertible String QualName where safeConvert = errorsToConvertResult (validationToEither . asQualName)
+
 instance Convertible QualName String  where safeConvert n = Right $ dotted [pkgName n,mdlName n,locName n]
 
--- |Parse the string as a QualName, if possible
---
--- >>> parseQualName "ab.cd.ef.gh"
--- Right (QualName {pkgName = "ab", mdlName = "cd.ef", locName = "gh"})
-parseQualName :: String -> Either String QualName
-parseQualName "" = Left "Empty string"
-parseQualName n = Right $
-  let  (p,r) = span (/= '.') n
-  in if null r
-     then QualName "" "" p
-     else let (l,r2) = span (/= '.') $ reverse $ tail r
-          in if null r2
-             then QualName "" p (reverse l)
-             else let m = reverse $ tail r2
-                  in QualName p m (reverse l)
+{-|Convert a String to a `QualName`, if possible
+
+>>> asQualName "ab.cd.ef.gh"
+Success (QualName {pkgName = "ab", mdlName = "cd.ef", locName = "gh"})
+
+>>> asQualName "ab.cd.ef"
+Success (QualName {pkgName = "ab", mdlName = "cd", locName = "ef"})
+
+>>> asQualName "ab.cd"
+Success (QualName {pkgName = "", mdlName = "ab", locName = "cd"})
+
+>>> asQualName "ab"
+Success (QualName {pkgName = "", mdlName = "", locName = "ab"})
+
+>>> asQualName ""
+Failure ["Empty qualified name"]
+
+>>> asQualName "."
+Failure ["Empty qualified name"]
+
+The conversion assumes that the input String is a well-formed Haskell fully qualified name.
+
+It will produce funny results if this is not the case:
+
+>>> asQualName "**.&&.!!"
+Success (QualName {pkgName = "**", mdlName = "&&", locName = "!!"})
+
+-}
+asQualName :: String -> Validation Errors QualName
+asQualName =
+  (\n ->
+     if nullQualName n
+       then Failure ["Empty qualified name"]
+       else Success n) .
+  asQualName_
+  where
+    nullQualName n = pkgName n == "" && mdlName n == "" && locName n == ""
+    asQualName_ n =
+      let (p, r) = span (/= '.') n
+      in if null r
+           then QualName "" "" p
+           else let (l, r2) = span (/= '.') $ reverse $ tail r
+                in if null r2
+                     then QualName "" p (reverse l)
+                     else let m = reverse $ tail r2
+                          in QualName p m (reverse l)
 
 -- |Simple name
 data Name = Name String deriving (Eq, Ord, Show, NFData, Generic)

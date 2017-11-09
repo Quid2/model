@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
@@ -11,15 +12,18 @@ module Data.Model.Util
   , Errors
   , toErrors
   , noErrors
-  -- * Convertible utilities
-  , Convertible(..)
-  , convert
-  , ConvertResult
-  , ConvertError(..)
+  , errsInContext
+  , inContext
   , errorToConvertResult
   , errorsToConvertResult
   , convertResultToError
   , convertResultToErrors
+  , convertOrError
+  -- * Convertible re-exports
+  , Convertible(..)
+  , convert
+  , ConvertResult
+  , ConvertError(..)
   -- * Formatting utilities
   , dotted
   ) where
@@ -90,35 +94,51 @@ type Errors = [Error]
 
 type Error = String
 
--- |Either an error or a valid value
--- type EitherError a = Either String a
-
--- |Either errors or a valid value
--- type EitherErrors a = Either [String] a
-
-toErrors :: Either Error a -> Either Errors a
+toErrors :: Bifunctor p => p a c -> p [a] c
 toErrors = first (:[])
 
 noErrors :: Errors -> Bool
 noErrors = null
 
-errorToConvertResult
-  :: (Typeable b, Typeable a, Show a)
-  => (a -> Either Error b) -> a -> ConvertResult b
+errorToConvertResult :: (Typeable b, Typeable a, Show a) => (a -> Either Error b) -> a -> ConvertResult b
 errorToConvertResult conv a = either (\err -> convError err a) Right $ conv a
 
-errorsToConvertResult
-  :: (Typeable b, Typeable a, Show a)
-  => (a -> Either Errors b) -> a -> ConvertResult b
-errorsToConvertResult conv a = either (\errs -> convError (unwords errs) a) Right $ conv a
+{-|
+>>> errorsToConvertResult (const (Left ["Bad format","Invalid value"])) ".." :: ConvertResult Int
+Left (ConvertError {convSourceValue = "\"..\"", convSourceType = "[Char]", convDestType = "Int", convErrorMessage = "Bad format, Invalid value"})
+-}
+errorsToConvertResult :: (Typeable b, Typeable t, Show t) => (t -> Either Errors b) -> t -> ConvertResult b
+errorsToConvertResult conv a = either (\errs -> convError (intercalate ", " errs) a) Right $ conv a
 
-convertResultToError :: ConvertResult a -> Either Error a
+{-|
+>>> convertOrError 'a' :: Either Error Word
+Right 97
+
+>>> convertOrError (1E50::Double) :: Either Error Word
+Left "Convertible: error converting source data 1.0e50 of type Double to type Word: Input value outside of bounds: (0,18446744073709551615)"
+-}
+convertOrError :: Convertible a c => a -> Either String c
+convertOrError = convertResultToError . safeConvert
+
+convertResultToError :: Bifunctor p => p ConvertError c -> p String c
 convertResultToError = first prettyConvertError
 
-convertResultToErrors :: ConvertResult a -> Either Errors a
+convertResultToErrors :: Bifunctor p => p ConvertError c -> p [String] c
 convertResultToErrors = toErrors . convertResultToError
 
 instance Convertible String String where safeConvert = Right . id
+
+-- |Prefix errors with a contextual note
+errsInContext :: (Convertible ctx String, Bifunctor p) => ctx -> p [String] c -> p [String] c
+errsInContext ctx = first (inContext ctx)
+
+{-|Prefix a list of strings with a contextual note
+
+>>> inContext "0/0" ["Zero denominator"]
+["In 0/0: Zero denominator"]
+-}
+inContext :: Convertible ctx String => ctx -> [String] -> [String]
+inContext ctx = map (\msg -> unwords ["In",convert ctx++":",msg])
 
 {-| Intercalate a dot between the non empty elements of a list of strings.
 
@@ -138,3 +158,4 @@ dotted [s] = s
 dotted (h:t) = post h ++ dotted t
     where post s | null s = ""
                  | otherwise = s ++ "."
+
