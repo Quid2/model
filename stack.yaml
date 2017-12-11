@@ -5,3 +5,4 @@ packages:
 
 #extra-deps:
 #- either-5
+#- tasty-hunit-0.10.0.1
