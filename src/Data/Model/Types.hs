@@ -272,9 +272,9 @@ data QualName = QualName {pkgName,mdlName,locName :: String}
               deriving (Eq, Ord, Show, NFData, Generic)
 
 {-|Return the qualified name, minus the package name.
+
 >>> qualName (QualName {pkgName = "ab", mdlName = "cd.ef", locName = "gh"})
 "cd.ef.gh"
-
 -}
 qualName :: QualName -> String
 qualName n = convert $ n {pkgName=""}

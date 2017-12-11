@@ -1,5 +1,8 @@
 Significant and compatibility-breaking changes.
 
+Version 0.4.4:
+	- minor cabal and documentation fixes
+
 Version 0.4.2:
 	- model.cabal: added upper bounds for dependencies
 	- Data.Model.Util: added error handling utilities
