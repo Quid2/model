@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings         #-}
-{-# LANGUAGE TupleSections             #-}
+
 -- |Pretty instances for the model types
 module Data.Model.Pretty(
   CompactPretty(..)
@@ -10,6 +10,8 @@ module Data.Model.Pretty(
   ,dottedP,spacedP,vspacedP,varP,varC
   -- *Re-exports
   ,Pretty(..),prettyShow
+
+  ,prettyADT
   ) where
 
 import           Data.Char
@@ -18,9 +20,10 @@ import qualified Data.Map                       as M
 import           Data.Model.Types
 import           Data.Model.Util
 import           Text.PrettyPrint.HughesPJClass
+import    qualified       Text.PrettyPrint.HughesPJClass as P
 
 -- |Compact representation: a value enveloped in CompactPretty will have only its first lines displayed
-data CompactPretty a = CompactPretty a
+newtype CompactPretty a = CompactPretty a
 
 instance Pretty a => Pretty (CompactPretty a) where pPrint (CompactPretty a) = text . shorter . prettyShow $ a
 
@@ -47,10 +50,10 @@ localName = Name . convert
 instance (Pretty n,Pretty cn,Pretty r) => Pretty (ADT n cn r) where pPrint = prettyADT "" '≡'
 
 prettyADT :: (Pretty name, Pretty consName, Pretty ref) => String -> Char -> ADT name consName ref -> Doc
-prettyADT pre eq adt = text pre <+> pPrint (declName adt) <+> vars adt <+> maybe (text "") (\c -> char eq <+> pPrint c) (declCons adt)
+prettyADT pre eq adt = text pre P.<> pPrint (declName adt) <+> vars adt <+> maybe (text "") (\c -> char eq <+> pPrint c) (declCons adt)
 
 vars :: ADT name consName ref -> Doc
-vars adt = sep . map varP . map (\x -> x-1) $ [1 .. declNumParameters adt]
+vars adt = sep . map (varP . (\x -> x-1)) $ [1 .. declNumParameters adt]
 
 -- |Convert a variable number (0,1,..) to a name ('a','b',..)
 varP :: Integral n => n -> Doc
@@ -58,7 +61,7 @@ varP = char . varC
 
 -- |Convert a variable number (0,1,..) to a name ('a','b',..)
 varC :: Integral a => a -> Char
-varC n = chr ( (ord 'a') + (fromIntegral n))
+varC n = chr (ord 'a' + fromIntegral n)
 
 instance (Pretty name,Pretty ref) => Pretty (ConTree name ref) where
   pPrint conTree = let (h:t) = constructors conTree
@@ -69,7 +72,7 @@ instance {-# OVERLAPS #-} (Pretty name,Pretty ref) => Pretty (name,Fields name r
 
 instance {-# OVERLAPS #-} (Pretty name,Pretty ref) => Pretty (Fields name ref) where
   pPrint (Left fs) = sep (map (printPrettyType True) fs)
-  pPrint (Right nfs) = "{" <> sep (punctuate "," (map (\(nm,t) -> pPrint nm <+> "::" <+> pPrint t) nfs)) <> "}"
+  pPrint (Right nfs) = "{" P.<> sep (punctuate "," (map (\(nm,t) -> pPrint nm <+> "::" <+> pPrint t) nfs)) P.<> "}"
 
 instance Pretty n => Pretty (TypeRef n) where
    pPrint (TypVar v) = varP v

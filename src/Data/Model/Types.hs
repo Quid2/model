@@ -182,9 +182,9 @@ instance Foldable (ConTree name) where
 
 instance Traversable (ConTree name) where
   traverse f (ConTree l r) = ConTree <$> traverse f l <*> traverse f r
-  traverse f (Con n (Left ts)) = Con n . Left <$> sequenceA (map (traverse f) ts)
+  traverse f (Con n (Left ts)) = Con n . Left <$> traverse (traverse f) ts
   -- TODO: simplify this
-  traverse f (Con n (Right nts)) = Con n . Right . zip (map fst nts) <$> sequenceA (map (traverse f . snd) nts)
+  traverse f (Con n (Right nts)) = Con n . Right . zip (map fst nts) <$> traverse (traverse f . snd) nts
 
 -- |Map on the constructor types (used for example when eliminating variables)
 conTreeTypeMap :: (Type t -> Type ref) -> ConTree name t -> ConTree name ref
@@ -331,7 +331,7 @@ asQualName =
                           in QualName p m (reverse l)
 
 -- |Simple name
-data Name = Name String deriving (Eq, Ord, Show, NFData, Generic)
+newtype Name = Name String deriving (Eq, Ord, Show, NFData, Generic)
 
 -- Utilities
 -- |Solve all references in a data structure, using the given environment

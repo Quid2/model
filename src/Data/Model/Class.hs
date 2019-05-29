@@ -4,6 +4,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TypeOperators             #-}
+{-# LANGUAGE UndecidableInstances      #-}
 
 module Data.Model.Class(
   typeModel
@@ -83,7 +84,7 @@ addCT_ useLocalString p mct =
     inCtx <- enterCtx qname
     unless inCtx $ do
       ct <- mct
-      addDef qname $ ADT uname (fromIntegral $ length ts) $ ct
+      addDef qname $ ADT uname (fromIntegral $ length ts) ct
     closeCtx
     return . TypeCon . TypRef $ qname
 
@@ -124,7 +125,7 @@ instance (GModel a, Constructor c) => GModel (M1 C c a) where
     where
       toE (ls,[]) = Left ls
       toE ([],rs) = Right rs
-      toE p = error . unwords $ ["toE: unexpected parameter",show p]
+      toE p       = error . unwords $ ["toE: unexpected parameter",show p]
 
   gtype = notThere
   gtypeN = notThere
