@@ -17,16 +17,23 @@ BUG: Silently fails for types with more than 9 parameters (should be defined rec
 
 Examples:
 
->> undefined :: Ana (Maybe Char)
-undefined :: Ana (Maybe Char) :: App (Typ (Maybe A0)) (Typ Char)
+>>> :kind!  Ana (Maybe Bool)
+Ana (Maybe Bool) :: *
+= App (Typ (Maybe A0)) (Typ Bool)
 
->> undefined :: Ana (Either Int Char)
-undefined :: Ana (Either Int Char)
-  :: App (App (Typ (Either A0 A1)) (Typ Int)) (Typ Char)
+>>> :kind! Ana (Maybe Char)
+Ana (Maybe Char) :: * 
+= App (Typ (Maybe A0)) (Typ Char)
 
->> undefined :: Ana ([(Bool,())])
-undefined :: Ana ([(Bool,())])
-  :: App (Typ [A0]) (App (App (Typ (A0, A1)) (Typ Bool)) (Typ ()))
+>>> :kind! Ana (Either Int (Maybe Bool))
+Ana (Either Int (Maybe Bool)) :: *
+= App
+    (App (Typ (Either A0 A1)) (Typ Int))
+    (App (Typ (Maybe A0)) (Typ Bool))
+
+>>> :kind! Ana ([(Bool,())])
+Ana ([(Bool,())]) :: * 
+= App (Typ [A0]) (App (App (Typ (A0, A1)) (Typ Bool)) (Typ ()))
 -}
 type family Ana t where
     Ana (f a0 a1 a2 a3 a4 a5 a6 a7 a8) = App (App (App (App (App (App (App (App (App (Typ (f A0 A1 A2 A3 A4 A5 A6 A7 A8 )) (Ana a0)) (Ana a1)) (Ana a2)) (Ana a3)) (Ana a4)) (Ana a5)) (Ana a6)) (Ana a7)) (Ana a8)
@@ -39,8 +46,6 @@ type family Ana t where
     Ana (f a0 a1) = App (App (Typ (f A0 A1 )) (Ana a0)) (Ana a1)
     Ana (f a0) = App (Typ (f A0 )) (Ana a0)
     Ana a = Typ a
-
--- Problem: in Ana (Either Char Int) -> Ana (f a) f==Either Char a=Int
 
 -- |Type application
 data App f a
