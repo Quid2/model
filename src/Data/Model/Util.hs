@@ -66,10 +66,11 @@ errorsToConvertResult conv a =
   either (\errs -> convError (intercalate ", " errs) a) Right $ conv a
 
 {-|
+>>> import Data.Word
 >>> convertOrError 'a' :: Either Error Word
 Right 97
 
->>> convertOrError (1E50::Double) :: Either Error Word
+>>> convertOrError (1E50::Double) :: Either Error Word64
 Left "Convertible: error converting source data 1.0e50 of type Double to type Word: Input value outside of bounds: (0,18446744073709551615)"
 -}
 convertOrError :: Convertible a c => a -> Either String c
