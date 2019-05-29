@@ -1,5 +1,9 @@
 Significant and compatibility-breaking changes.
 
+Version 0.5:
+	- model.cabal: relaxed dependent packages upper bounds
+	- Data.Model.Util: removed properMutualGroups, mutualGroups, transitiveClosure (moved to http://hackage.haskell.org/package/zm)
+
 Version 0.4.4:
 	- minor cabal and documentation fixes
 

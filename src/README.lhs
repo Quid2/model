@@ -52,7 +52,7 @@ Get the latest stable version from [hackage](https://hackage.haskell.org/package
 
  ### Compatibility
 
-Tested with [ghc](https://www.haskell.org/ghc/) 7.10.3, 8.0.1, 8.0.2 and 8.2.1.
+Tested with [ghc](https://www.haskell.org/ghc/) 7.10.3, 8.0.2, 8.2.2, 8.4.4 and 8.6.5.
 
  ### Known Bugs and Infelicities
 

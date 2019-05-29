@@ -121,14 +121,14 @@ pPrint $ typeModel (Proxy:: Proxy (Couple Direction Bool))
 -> main.Main.Couple main.Main.Direction
 ->                  ghc-prim.GHC.Types.Bool -> Couple Direction Bool
 -> Environment:
--> ghc-prim.GHC.Types.Bool ->  Bool ≡   False
-->         | True
--> main.Main.Couple ->  Couple a b ≡   Couple a b
--> main.Main.Direction ->  Direction ≡   North
-->              | South
-->              | Center
-->              | East
-->              | West
+-> ghc-prim.GHC.Types.Bool -> Bool ≡   False
+->        | True
+-> main.Main.Couple -> Couple a b ≡   Couple a b
+-> main.Main.Direction -> Direction ≡   North
+->             | South
+->             | Center
+->             | East
+->             | West
 ```
 
 
@@ -143,10 +143,10 @@ pPrint $ typeModel (Proxy:: Proxy [Bool])
 -> Type:
 -> ghc-prim.GHC.Types.[] ghc-prim.GHC.Types.Bool -> [] Bool
 -> Environment:
--> ghc-prim.GHC.Types.Bool ->  Bool ≡   False
-->         | True
--> ghc-prim.GHC.Types.[] ->  [] a ≡   []
-->         | : a (ghc-prim.GHC.Types.[] a)
+-> ghc-prim.GHC.Types.Bool -> Bool ≡   False
+->        | True
+-> ghc-prim.GHC.Types.[] -> [] a ≡   []
+->        | : a (ghc-prim.GHC.Types.[] a)
 ```
 
 
@@ -156,7 +156,7 @@ Get the latest stable version from [hackage](https://hackage.haskell.org/package
 
 ### Compatibility
 
-Tested with [ghc](https://www.haskell.org/ghc/) 7.10.3, 8.0.1, 8.0.2 and 8.2.1.
+Tested with [ghc](https://www.haskell.org/ghc/) 7.10.3, 8.0.2, 8.2.2, 8.4.4 and 8.6.5.
 
 ### Known Bugs and Infelicities
 
