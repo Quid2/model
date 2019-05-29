@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveAnyClass            #-}
-{-# LANGUAGE DeriveGeneric             #-}
+
+
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 -- {-# LANGUAGE OverloadedStrings         #-}
@@ -12,6 +12,7 @@ import           Data.Model
 import           Info
 import           Test.Data
 import           Test.Data.Model  ()
+import           Data.Model.Util  ()
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
@@ -27,27 +28,28 @@ tests =
     "Tests"
     [
     modelTests
-    , transformTests
+    --, transformTests
     , namesTests
     , prettyTests
     ]
 
-transformTests :: TestTree
-transformTests = testGroup "Transform Tests" [
-  testTrc [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])] "b" ["c","a","d","b"]
-  ,testTrc [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])] "c" ["c"]
-  ,testMutual ([("a",["b","c"]),("b",["a","c"]),("c",[])]) (Right [["c"],["b","a"]])
-  ,testMutual ([("a",["b","c"]),("b",["a","c","b"]),("c",["d"]),("d",[])]) (Right [["d"],["c"],["b","a"]])
-  ,testMutual ([("a",["z","c"]),("b",["a","c","b"]),("c",["d"])]) (Left ["transitiveClosure:Unknown reference to \"d\"","transitiveClosure:Unknown reference to \"z\""])
-  ]
-  where
-    testTrc adjs start etrc =
-      let Right trc = transitiveClosure Just (M.fromList adjs) start
-      in testCase (unwords ["transitiveClosure",show adjs,start]) $ trc @?= etrc
+-- Move to ZM    
+-- transformTests :: TestTree
+-- transformTests = testGroup "Transform Tests" [
+--    testTrc [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])] "b" ["c","a","d","b"]
+--   ,testTrc [("a",["b","c"]),("b",["b","d","d","c"]),("c",[]),("d",["a"])] "c" ["c"]
+--   ,testMutual [("a",["b","c"]),("b",["a","c"]),("c",[])] (Right [["c"],["b","a"]])
+--   ,testMutual [("a",["b","c"]),("b",["a","c","b"]),("c",["d"]),("d",[])] (Right [["d"],["c"],["b","a"]])
+--   ,testMutual [("a",["z","c"]),("b",["a","c","b"]),("c",["d"])] (Left ["transitiveClosure:Unknown reference to \"d\"","transitiveClosure:Unknown reference to \"z\""])
+--   ]
+--   where
+--     testTrc adjs start etrc =
+--       let Right trc = transitiveClosure Just (M.fromList adjs) start
+--       in testCase (unwords ["transitiveClosure",show adjs,start]) $ trc @?= etrc
 
-    testMutual adjs emut =
-      let mut = mutualGroups Just (M.fromList adjs)
-      in testCase (unwords ["mutualGroups",show adjs]) $ mut @?= emut
+--     testMutual adjs emut =
+--       let mut = mutualGroups Just (M.fromList adjs)
+--       in testCase (unwords ["mutualGroups",show adjs]) $ mut @?= emut
 
 namesTests :: TestTree
 namesTests = testGroup "QualName Tests" [
@@ -68,12 +70,12 @@ namesTests = testGroup "QualName Tests" [
       ]
 
 prettyTests :: TestTree
-prettyTests = testGroup "Pretty Tests" $ map tst $ zip models2 pretty2
+prettyTests = testGroup "Pretty Tests" $ zipWith (curry tst) models2 pretty2
   where
     tst (model,pretty) = testCase (unwords ["Pretty"]) $ prettyShow model @?= pretty
     -- let env = typeEnv model in prettyShow (env,model) @?= pretty
 
     models2 = [typeModel (Proxy :: Proxy (List Bool))]
 
-    pretty2 = ["Type:\nmain.Test.Data.List ghc-prim.GHC.Types.Bool -> List Bool\nEnvironment:\nghc-prim.GHC.Types.Bool ->  Bool \8801   False\n        | True\nmain.Test.Data.List ->  List a \8801   C a (main.Test.Data.List a)\n          | N"]
+    pretty2 = ["Type:\nmain.Test.Data.List ghc-prim.GHC.Types.Bool -> List Bool\nEnvironment:\nghc-prim.GHC.Types.Bool -> Bool \8801   False\n       | True\nmain.Test.Data.List -> List a \8801   C a (main.Test.Data.List a)\n         | N"]
 

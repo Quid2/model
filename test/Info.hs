@@ -5,30 +5,44 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 
-module Info(modelTests) where
+module Info
+  ( modelTests
+  )
+where
 import           Data.Model
 import           Data.Word
 import qualified GHC.Base
 import           Test.Data
-import           Test.Data.Model ()
+import           Test.Data.Model                ( )
 import qualified Test.Data2
 import qualified Test.Data3
 import qualified Data.Either
 import           Data.List
-import qualified Data.Map         as M
+import qualified Data.Map                      as M
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
-testSimpleModel :: AsType (Ana a) => Proxy a -> (Type (TypeRef Name), [ADT String String (TypeRef Name)]) -> TestTree
-testSimpleModel p e = let tm = typeModel p
-                          s = prettyShow . simpleType $ typeName tm
-                      in testCase (unwords ["simple typeModel of",s]) $ simpleHTypeEnv tm @?= e
-
-testModel :: AsType (Ana a) => Proxy a -> (Type QualName, [(QualName, ADT String String (TypeRef QualName))]) -> TestTree
-testModel p (etn,ete) =
+testSimpleModel
+  :: AsType (Ana a)
+  => Proxy a
+  -> (Type (TypeRef Name), [ADT String String (TypeRef Name)])
+  -> TestTree
+testSimpleModel p e =
   let tm = typeModel p
-      s = prettyShow . simpleType $ typeName tm
-  in testCase (unwords ["typeModel of",s]) $ tm @?= TypeModel etn (M.fromList ete)
+      s  = prettyShow . simpleType $ typeName tm
+  in  testCase (unwords ["simple typeModel of", s]) $ simpleHTypeEnv tm @?= e
+
+testModel
+  :: AsType (Ana a)
+  => Proxy a
+  -> (Type QualName, [(QualName, ADT String String (TypeRef QualName))])
+  -> TestTree
+testModel p (etn, ete) =
+  let tm = typeModel p
+      s  = prettyShow . simpleType $ typeName tm
+  in  testCase (unwords ["typeModel of", s]) $ tm @?= TypeModel
+        etn
+        (M.fromList ete)
 
 models :: [HTypeModel]
 models =
@@ -54,11 +68,11 @@ models =
   , typeModel (Proxy :: Proxy (Test.Data2.List Bool))
   , typeModel (Proxy :: Proxy (Test.Data3.List Bool))
   , typeModel (Proxy :: Proxy (List (Test.Data2.List (Test.Data3.List Bool))))
-  , typeModel (Proxy :: Proxy (Maybe Void))
+  , typeModel (Proxy :: Proxy (Either Void Bool))
   , typeModel (Proxy :: Proxy (Either Bool Unit))
   , typeModel (Proxy :: Proxy (RR Un Unit N))
   , typeModel (Proxy :: Proxy (Either Bool (List Unit)))
-  , typeModel (Proxy :: Proxy (Tr (Maybe Unit)))
+  , typeModel (Proxy :: Proxy (Tr (Either Unit N)))
   , typeModel (Proxy :: Proxy (Perfect Bool))
         -- Unsupported: higher kind
         --,typeModel (Proxy :: Proxy (PerfectF Maybe Bool))
@@ -66,12 +80,14 @@ models =
   ]
 
 --------- Some (fake) instance declaration for primitive types, for testing only
-instance Model Char where envType _ = envType (Proxy::Proxy CharSI)
+instance Model Char where
+  envType _ = envType (Proxy :: Proxy CharSI)
 data CharSI deriving Generic
 instance Model CharSI
 
 -- Provide models for Word8 .. using stand-in classes
-instance Model Word8 where envType _ = envType (Proxy::Proxy Word8SI)
+instance Model Word8 where
+  envType _ = envType (Proxy :: Proxy Word8SI)
 data Word8SI deriving Generic
 instance Model Word8SI
 
@@ -85,19 +101,26 @@ instance Model ()
 
 ----- Pretty printing
 -- Simplify types for test
-simpleHTypeEnv :: Ord consName => TypeModel name consName HTypeRef QualName -> (Type (TypeRef Name), [ADT String consName (TypeRef Name)])
-simpleHTypeEnv tm = (simpleType $ typeName tm
-                    ,sort . map simpleADT $ M.assocs $ typeEnv tm)
+simpleHTypeEnv
+  :: Ord consName
+  => TypeModel name consName HTypeRef QualName
+  -> (Type (TypeRef Name), [ADT String consName (TypeRef Name)])
+simpleHTypeEnv tm =
+  (simpleType $ typeName tm, sort . map simpleADT $ M.assocs $ typeEnv tm)
 
-hTypeEnv :: TypeModel adtName consName inRef k -> (Type k, [(k, ADT adtName consName inRef)])
-hTypeEnv tm = (typeName tm
-              ,M.toList $ typeEnv tm)
+hTypeEnv
+  :: TypeModel adtName consName inRef k
+  -> (Type k, [(k, ADT adtName consName inRef)])
+hTypeEnv tm = (typeName tm, M.toList $ typeEnv tm)
 
 simpleType :: Functor f => f QualName -> f (TypeRef Name)
 simpleType = (TypRef . asName <$>)
 
-simpleADT :: (QualName, ADT name consName HTypeRef) -> ADT String consName (TypeRef Name)
-simpleADT (qname,adt) = ADT (qualName qname) (declNumParameters adt) ((mdlRef <$>) <$> declCons adt)
+simpleADT
+  :: (QualName, ADT name consName HTypeRef)
+  -> ADT String consName (TypeRef Name)
+simpleADT (qname, adt) =
+  ADT (qualName qname) (declNumParameters adt) ((mdlRef <$>) <$> declCons adt)
 
 mdlRef :: HTypeRef -> TypeRef Name
 mdlRef (TypVar v) = TypVar v
@@ -105,7 +128,7 @@ mdlRef (TypRef n) = TypRef (asName n)
 
 asName :: QualName -> Name
 asName qn | mdlName qn == "GHC.Types" = Name $ locName qn
-asName n = Name . qualName $ n
+asName n                              = Name . qualName $ n
 
 pr :: Show a => a -> IO ()
 pr = print
@@ -121,20 +144,52 @@ thisFile = "test/Info.hs"
 
 -- makeTest ts = appendFile thisFile $ ("\n-- Appended by makeTest\nmodelTests = testGroup \"Unit tests\" [" ++ (intercalate "\n\n  ," $ map (\tm -> unwords ["testModel (Proxy :: Proxy (",prettyShow . simpleType . typeName $ tm,")) (",show . simpleHTypeEnv $ tm,")"]) ts)) ++ " ]"
 
-makeSimpleTest :: (Ord consName, Show consName) => [TypeModel name consName HTypeRef QualName] -> IO ()
-makeSimpleTest ts = appendFile thisFile $ ("\n-- Appended by makeTest\nmodelTests = testGroup \"Unit tests\" [" ++ (intercalate "\n\n  ," $ map (\tm -> unwords ["testModel (Proxy :: Proxy (",prettyShow . simpleType . typeName $ tm,")) (",show . simpleHTypeEnv $ tm,")"]) ts)) ++ " ]"
+makeSimpleTest
+  :: (Ord consName, Show consName)
+  => [TypeModel name consName HTypeRef QualName]
+  -> IO ()
+makeSimpleTest ts =
+  appendFile thisFile
+    $  (  "\n-- Appended by makeTest\nmodelTests = testGroup \"Unit tests\" ["
+       ++ (intercalate "\n\n  ," $ map
+            (\tm -> unwords
+              [ "testModel (Proxy :: Proxy ("
+              , prettyShow . simpleType . typeName $ tm
+              , ")) ("
+              , show . simpleHTypeEnv $ tm
+              , ")"
+              ]
+            )
+            ts
+          )
+       )
+    ++ " ]"
 
-makeTest :: (Show adtName, Show inRef, Show consName) => [TypeModel adtName consName inRef QualName] -> IO ()
-makeTest ts = appendFile thisFile $ ("\n-- Appended by makeTest\nmodelTests = testGroup \"Unit tests\" [" ++ (intercalate "\n\n  ," $ map (\tm -> unwords ["testModel (Proxy :: Proxy (",prettyShow . simpleType . typeName $ tm,")) (",show . hTypeEnv $ tm,")"]) ts)) ++ " ]"
+makeTest
+  :: (Show adtName, Show inRef, Show consName)
+  => [TypeModel adtName consName inRef QualName]
+  -> IO ()
+makeTest ts =
+  appendFile thisFile
+    $  (  "\n-- Appended by makeTest\nmodelTests = testGroup \"Unit tests\" ["
+       ++ (intercalate "\n\n  ," $ map
+            (\tm -> unwords
+              [ "testModel (Proxy :: Proxy ("
+              , prettyShow . simpleType . typeName $ tm
+              , ")) ("
+              , show . hTypeEnv $ tm
+              , ")"
+              ]
+            )
+            ts
+          )
+       )
+    ++ " ]"
 
 -- modelTests = undefined
 
 
-
-
-
 -- Appended by makeTest
-modelTests :: TestTree
 modelTests = testGroup "Unit tests" [testModel (Proxy :: Proxy ( Test.Data.Void )) ( (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Void"}),[(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Void"},ADT {declName = "Void", declNumParameters = 0, declCons = Nothing})]) )
 
   ,testModel (Proxy :: Proxy ( Test.Data.Unit )) ( (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Unit"}),[(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Unit"},ADT {declName = "Unit", declNumParameters = 0, declCons = Just (Con {constrName = "Unit", constrFields = Left []})})]) )
@@ -169,7 +224,7 @@ modelTests = testGroup "Unit tests" [testModel (Proxy :: Proxy ( Test.Data.Void 
 
   ,testModel (Proxy :: Proxy ( Test.Data.List (Test.Data2.List (Test.Data3.List Bool)) )) ( (TypeApp (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"})) (TypeApp (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data2", locName = "List"})) (TypeApp (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data3", locName = "List"})) (TypeCon (QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"})))),[(QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"},ADT {declName = "Bool", declNumParameters = 0, declCons = Just (ConTree (Con {constrName = "False", constrFields = Left []}) (Con {constrName = "True", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"},ADT {declName = "List", declNumParameters = 1, declCons = Just (ConTree (Con {constrName = "C", constrFields = Left [TypeCon (TypVar 0),TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"}))) (TypeCon (TypVar 0))]}) (Con {constrName = "N", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Test.Data2", locName = "List"},ADT {declName = "List", declNumParameters = 1, declCons = Just (ConTree (Con {constrName = "Cons2", constrFields = Left [TypeCon (TypVar 0),TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data2", locName = "List"}))) (TypeCon (TypVar 0))]}) (Con {constrName = "Nil2", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Test.Data3", locName = "List"},ADT {declName = "List", declNumParameters = 1, declCons = Just (ConTree (Con {constrName = "C", constrFields = Left [TypeCon (TypVar 0),TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data3", locName = "List"}))) (TypeCon (TypVar 0))]}) (Con {constrName = "N", constrFields = Left []}))})]) )
 
-  ,testModel (Proxy :: Proxy ( GHC.Base.Maybe Test.Data.Void )) ( (TypeApp (TypeCon (QualName {pkgName = "base", mdlName = "GHC.Base", locName = "Maybe"})) (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Void"})),[(QualName {pkgName = "base", mdlName = "GHC.Base", locName = "Maybe"},ADT {declName = "Maybe", declNumParameters = 1, declCons = Just (ConTree (Con {constrName = "Nothing", constrFields = Left []}) (Con {constrName = "Just", constrFields = Left [TypeCon (TypVar 0)]}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Void"},ADT {declName = "Void", declNumParameters = 0, declCons = Nothing})]) )
+  ,testModel (Proxy :: Proxy ( Data.Either.Either Test.Data.Void Bool )) ( (TypeApp (TypeApp (TypeCon (QualName {pkgName = "base", mdlName = "Data.Either", locName = "Either"})) (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Void"}))) (TypeCon (QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"})),[(QualName {pkgName = "base", mdlName = "Data.Either", locName = "Either"},ADT {declName = "Either", declNumParameters = 2, declCons = Just (ConTree (Con {constrName = "Left", constrFields = Left [TypeCon (TypVar 0)]}) (Con {constrName = "Right", constrFields = Left [TypeCon (TypVar 1)]}))}),(QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"},ADT {declName = "Bool", declNumParameters = 0, declCons = Just (ConTree (Con {constrName = "False", constrFields = Left []}) (Con {constrName = "True", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Void"},ADT {declName = "Void", declNumParameters = 0, declCons = Nothing})]) )
 
   ,testModel (Proxy :: Proxy ( Data.Either.Either Bool Test.Data.Unit )) ( (TypeApp (TypeApp (TypeCon (QualName {pkgName = "base", mdlName = "Data.Either", locName = "Either"})) (TypeCon (QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"}))) (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Unit"})),[(QualName {pkgName = "base", mdlName = "Data.Either", locName = "Either"},ADT {declName = "Either", declNumParameters = 2, declCons = Just (ConTree (Con {constrName = "Left", constrFields = Left [TypeCon (TypVar 0)]}) (Con {constrName = "Right", constrFields = Left [TypeCon (TypVar 1)]}))}),(QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"},ADT {declName = "Bool", declNumParameters = 0, declCons = Just (ConTree (Con {constrName = "False", constrFields = Left []}) (Con {constrName = "True", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Unit"},ADT {declName = "Unit", declNumParameters = 0, declCons = Just (Con {constrName = "Unit", constrFields = Left []})})]) )
 
@@ -177,6 +232,6 @@ modelTests = testGroup "Unit tests" [testModel (Proxy :: Proxy ( Test.Data.Void 
 
   ,testModel (Proxy :: Proxy ( Data.Either.Either Bool (Test.Data.List Test.Data.Unit) )) ( (TypeApp (TypeApp (TypeCon (QualName {pkgName = "base", mdlName = "Data.Either", locName = "Either"})) (TypeCon (QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"}))) (TypeApp (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"})) (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Unit"}))),[(QualName {pkgName = "base", mdlName = "Data.Either", locName = "Either"},ADT {declName = "Either", declNumParameters = 2, declCons = Just (ConTree (Con {constrName = "Left", constrFields = Left [TypeCon (TypVar 0)]}) (Con {constrName = "Right", constrFields = Left [TypeCon (TypVar 1)]}))}),(QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"},ADT {declName = "Bool", declNumParameters = 0, declCons = Just (ConTree (Con {constrName = "False", constrFields = Left []}) (Con {constrName = "True", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"},ADT {declName = "List", declNumParameters = 1, declCons = Just (ConTree (Con {constrName = "C", constrFields = Left [TypeCon (TypVar 0),TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"}))) (TypeCon (TypVar 0))]}) (Con {constrName = "N", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Unit"},ADT {declName = "Unit", declNumParameters = 0, declCons = Just (Con {constrName = "Unit", constrFields = Left []})})]) )
 
-  ,testModel (Proxy :: Proxy ( Test.Data.Tr (GHC.Base.Maybe Test.Data.Unit) )) ( (TypeApp (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Tr"})) (TypeApp (TypeCon (QualName {pkgName = "base", mdlName = "GHC.Base", locName = "Maybe"})) (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Unit"}))),[(QualName {pkgName = "base", mdlName = "GHC.Base", locName = "Maybe"},ADT {declName = "Maybe", declNumParameters = 1, declCons = Just (ConTree (Con {constrName = "Nothing", constrFields = Left []}) (Con {constrName = "Just", constrFields = Left [TypeCon (TypVar 0)]}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Forest"},ADT {declName = "Forest", declNumParameters = 1, declCons = Just (Con {constrName = "Forest", constrFields = Left [TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"}))) (TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Tr"}))) (TypeCon (TypVar 0)))]})}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"},ADT {declName = "List", declNumParameters = 1, declCons = Just (ConTree (Con {constrName = "C", constrFields = Left [TypeCon (TypVar 0),TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"}))) (TypeCon (TypVar 0))]}) (Con {constrName = "N", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Tr"},ADT {declName = "Tr", declNumParameters = 1, declCons = Just (Con {constrName = "Tr", constrFields = Left [TypeCon (TypVar 0),TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Forest"}))) (TypeCon (TypVar 0))]})}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Unit"},ADT {declName = "Unit", declNumParameters = 0, declCons = Just (Con {constrName = "Unit", constrFields = Left []})})]) )
+  ,testModel (Proxy :: Proxy ( Test.Data.Tr (Data.Either.Either Test.Data.Unit Test.Data.N) )) ( (TypeApp (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Tr"})) (TypeApp (TypeApp (TypeCon (QualName {pkgName = "base", mdlName = "Data.Either", locName = "Either"})) (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Unit"}))) (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "N"}))),[(QualName {pkgName = "base", mdlName = "Data.Either", locName = "Either"},ADT {declName = "Either", declNumParameters = 2, declCons = Just (ConTree (Con {constrName = "Left", constrFields = Left [TypeCon (TypVar 0)]}) (Con {constrName = "Right", constrFields = Left [TypeCon (TypVar 1)]}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Forest"},ADT {declName = "Forest", declNumParameters = 1, declCons = Just (Con {constrName = "Forest", constrFields = Left [TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"}))) (TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Tr"}))) (TypeCon (TypVar 0)))]})}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"},ADT {declName = "List", declNumParameters = 1, declCons = Just (ConTree (Con {constrName = "C", constrFields = Left [TypeCon (TypVar 0),TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "List"}))) (TypeCon (TypVar 0))]}) (Con {constrName = "N", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "N"},ADT {declName = "N", declNumParameters = 0, declCons = Just (ConTree (ConTree (Con {constrName = "One", constrFields = Left []}) (Con {constrName = "Two", constrFields = Left []})) (ConTree (Con {constrName = "Three", constrFields = Left []}) (ConTree (Con {constrName = "Four", constrFields = Left []}) (Con {constrName = "Five", constrFields = Left []}))))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Tr"},ADT {declName = "Tr", declNumParameters = 1, declCons = Just (Con {constrName = "Tr", constrFields = Left [TypeCon (TypVar 0),TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Forest"}))) (TypeCon (TypVar 0))]})}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Unit"},ADT {declName = "Unit", declNumParameters = 0, declCons = Just (Con {constrName = "Unit", constrFields = Left []})})]) )
 
   ,testModel (Proxy :: Proxy ( Test.Data.Perfect Bool )) ( (TypeApp (TypeCon (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Perfect"})) (TypeCon (QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"})),[(QualName {pkgName = "ghc-prim", mdlName = "GHC.Types", locName = "Bool"},ADT {declName = "Bool", declNumParameters = 0, declCons = Just (ConTree (Con {constrName = "False", constrFields = Left []}) (Con {constrName = "True", constrFields = Left []}))}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Fork"},ADT {declName = "Fork", declNumParameters = 1, declCons = Just (Con {constrName = "Fork", constrFields = Left [TypeCon (TypVar 0),TypeCon (TypVar 0)]})}),(QualName {pkgName = "main", mdlName = "Test.Data", locName = "Perfect"},ADT {declName = "Perfect", declNumParameters = 1, declCons = Just (ConTree (Con {constrName = "ZeroP", constrFields = Left [TypeCon (TypVar 0)]}) (Con {constrName = "SuccP", constrFields = Left [TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Perfect"}))) (TypeApp (TypeCon (TypRef (QualName {pkgName = "main", mdlName = "Test.Data", locName = "Fork"}))) (TypeCon (TypVar 0)))]}))})]) ) ]
