@@ -33,9 +33,9 @@ library
   build-depends:       base >= 4.8 && < 5
                      , containers
                      , either > 4.3.2 && <6
-                     , deepseq == 1.4.*
+                     , deepseq
                      , transformers >= 0.4.2.0 && < 0.6
-                     , pretty >= 1.1.2 && < 1.2
+                     , pretty >= 1.1.2
                      , text 
                      , bytestring
                      , convertible >= 1.1.1.0 && < 1.2
@@ -63,5 +63,5 @@ test-suite model-doctest
   type:               exitcode-stdio-1.0
   ghc-options:        -threaded
   main-is:            DocSpec.hs
-  build-depends:      base, doctest>=0.11.1,filemanip>=0.3.6.3,model
+  build-depends:      base, doctest>=0.11.2,filemanip>=0.3.6.3,model
   HS-Source-Dirs:     test
