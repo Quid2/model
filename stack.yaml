@@ -1,12 +1,4 @@
-#resolver: lts-6.35
-#resolver: lts-9.14
-#resolver: lts-11.22
-#resolver: lts-12.26
-resolver: lts-13.22
+resolver: lts-14.27
 
 packages:
-- '.'
-
-#extra-deps:
-#- either-5
-#- tasty-hunit-0.10.0.1
+  - "."
