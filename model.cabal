@@ -1,67 +1,88 @@
-name:                model
-version:             0.5.1
-synopsis:            Derive a model of a data type using Generics
-description:         See the <http://github.com/Quid2/model online tutorial>.
-homepage:            http://github.com/Quid2/model
-license:             BSD3
-license-file:        LICENSE
-author:              Pasqualino `Titto` Assini
-maintainer:          tittoassini@gmail.com
-copyright:           Copyright: (c) 2016 Pasqualino `Titto` Assini
-category:            Data,Reflection,Generics
-build-type:          Simple
-cabal-version:       >=1.10
-Tested-With: GHC == 7.10.3 GHC == 8.0.2 GHC == 8.2.2 GHC == 8.4.4 GHC == 8.6.5
-extra-source-files: stack.yaml,README.md,CHANGELOG
+name:               model
+version:            0.5.3
+synopsis:           Derive a model of a data type using Generics
+description:        See the <http://github.com/Quid2/model online tutorial>.
+homepage:           http://github.com/Quid2/model
+license:            BSD3
+license-file:       LICENSE
+author:             Pasqualino `Titto` Assini
+maintainer:         tittoassini@gmail.com
+copyright:          Copyright: (c) 2016 Pasqualino `Titto` Assini
+category:           Data,Reflection,Generics
+build-type:         Simple
+cabal-version:      >=1.10
+tested-with:
+  GHC ==7.10.3 || ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || ==9.4.7
+
+extra-source-files:
+  README.md
+  CHANGELOG
 
 source-repository head
   type:     git
   location: https://github.com/Quid2/model
 
 library
-  hs-source-dirs:      src
-  exposed-modules:     Data.Model
-                     , Data.Model.Class
-                     , Data.Model.Env
-                     , Data.Model.Instances
-                     , Data.Model.Pretty
-                     , Data.Model.Types
-                     , Data.Model.Util
-                     , Type.ANat,Type.Analyse
-                     , Data.Convertible.Tiny
+  hs-source-dirs:   src
+  exposed-modules:
+    Data.Convertible.Tiny
+    Data.Model
+    Data.Model.Class
+    Data.Model.Env
+    Data.Model.Instances
+    Data.Model.Pretty
+    Data.Model.Types
+    Data.Model.Util
+    Type.Analyse
+    Type.ANat
+
   -- other-modules: Data.Convertible.Base,Data.Convertible.Instances.Text,Data.Convertible.Instances.Num,Data.Convertible.Utils                     
-  build-depends:       base >= 4.8 && < 5
-                     , containers
-                     , either > 4.3.2 && <6
-                     , deepseq
-                     , transformers >= 0.4.2.0 && < 0.6
-                     , pretty >= 1.1.2
-                     --, text , bytestring
-                     , convertible >= 1.1.1.0 
-                     --&& < 1.2 
-                     -- adds dependencies on old-time that are incompatible with ghcjs
-  default-language:    Haskell2010
-  ghc-options:  -Wall -fno-warn-orphans
+  build-depends:
+      base          >=4.8
+    , containers
+    , convertible   >=1.1.1.0
+    , deepseq
+    , either        >4.3.2
+    , pretty        >=1.1.2
+    , transformers  >=0.4.2.0
+
+  --, text , bytestring
+  --&& < 1.2 
+  -- adds dependencies on old-time that are incompatible with ghcjs
+  default-language: Haskell2010
+  ghc-options:      -Wall -fno-warn-orphans
 
 test-suite spec
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
-  main-is:             Spec.hs
-  other-modules: Test.Data,Test.Data2,Test.Data3,Test.Data.Model,Info
-  build-depends:       base
-                     , pretty
-                     , containers
-                     , model
-                     , ghc-prim
-                     , tasty >= 0.11
-                     , tasty-hunit >= 0.8
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Spec.hs
+  other-modules:
+    Info
+    Test.Data
+    Test.Data.Model
+    Test.Data2
+    Test.Data3
 
-  default-language:    Haskell2010
+  build-depends:
+      base
+    , containers
+    , ghc-prim
+    , model
+    , pretty
+    , tasty        >=0.11
+    , tasty-hunit  >=0.8
+
+  default-language: Haskell2010
 
 test-suite doc
-  default-language:   Haskell2010
-  type:               exitcode-stdio-1.0
-  ghc-options:        -threaded
-  main-is:            DocSpec.hs
-  build-depends:      base, doctest>=0.11.2,filemanip>=0.3.6.3,model
-  HS-Source-Dirs:     test
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  ghc-options:      -threaded
+  main-is:          DocSpec.hs
+  build-depends:
+      base
+    , doctest    >=0.11.2
+    , filemanip  >=0.3.6.3
+    , model
+
+  hs-source-dirs:   test
